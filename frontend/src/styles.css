@@ -18,43 +18,99 @@ body {
   background: var(--white);
   color: var(--text);
 }
-/* Navbar */
+
+/* 
+====================================================================================================================
+   Navbar Section
+======================================================================================================================= 
+*/
 
 .navbar {
   background: var(--navy);
   width: 100%;
+  position: relative;
+  z-index: 1000;
 }
 
 .navbar-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 18px 24px;
+  padding: 16px 18px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 30px;
 }
 
 .navbar-logo {
   color: var(--white);
   text-decoration: none;
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 21px;
+  font-weight: 900;
   letter-spacing: 1px;
+}
+
+.navbar-toggle {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+.navbar-toggle span {
+  width: 20px;
+  height: 2px;
+  background: var(--white);
+  border-radius: 2px;
+}
+
+.navbar-menu {
+  display: none;
+
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
+  background: var(--navy);
+
+  padding: 10px 18px 22px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-menu.open {
+  display: block;
 }
 
 .navbar-links {
   display: flex;
-  align-items: center;
-  gap: 24px;
+  flex-direction: column;
+  gap: 0;
 }
 
 .navbar-links a {
+  display: block;
+
+  padding: 14px 0;
+
   color: var(--white);
   text-decoration: none;
-  font-size: 14px;
+
+  font-size: 15px;
   font-weight: 600;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .navbar-links a:hover {
@@ -62,16 +118,927 @@ body {
 }
 
 .navbar-button {
+  display: block;
+
+  margin-top: 18px;
+  padding: 12px 20px;
+
   background: var(--red);
   color: var(--white);
+
   text-decoration: none;
-  padding: 11px 20px;
+  text-align: center;
+
   border-radius: 6px;
+
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .navbar-button:hover {
   background: var(--gold);
   color: var(--navy);
+}
+
+/* 
+====================================================================================================================
+   Hero Section
+======================================================================================================================= 
+*/
+
+.hero {
+  min-height: 620px;
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 26, 74, 0.95) 0%,
+      rgba(7, 26, 74, 0.75) 45%,
+      rgba(7, 26, 74, 0.25) 100%
+    ),
+    url("/football-hero.jpg") center / cover no-repeat;
+}
+
+.hero-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.hero-eyebrow {
+  margin: 0 0 16px;
+
+  color: var(--gold);
+
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.hero h1 {
+  margin: 0;
+
+  color: var(--white);
+
+  font-size: clamp(48px, 7vw, 88px);
+  line-height: 0.95;
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+
+.hero-text {
+  margin: 28px 0 32px;
+
+  color: rgba(255, 255, 255, 0.85);
+
+  font-size: 20px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-button {
+  display: inline-block;
+
+  padding: 14px 24px;
+
+  border-radius: 6px;
+
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  transition: 0.2s ease;
+}
+
+.hero-button-primary {
+  background: var(--red);
+  color: var(--white);
+}
+
+.hero-button-primary:hover {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+.hero-button-secondary {
+  border: 2px solid var(--white);
+  color: var(--white);
+}
+
+.hero-button-secondary:hover {
+  background: var(--white);
+  color: var(--navy);
+}
+
+/*
+====================================================================================================================
+   Shared Section
+======================================================================================================================= 
+*/
+
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.section-heading {
+  margin-bottom: 40px;
+}
+
+.section-eyebrow {
+  margin: 0 0 10px;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1;
+}
+
+/* 
+====================================================================================================================
+   Next Match
+======================================================================================================================= 
+*/
+
+.next-match {
+  background: var(--light);
+}
+
+.match-card {
+  display: grid;
+  grid-template-columns: 1fr 180px 1fr;
+  align-items: center;
+  gap: 30px;
+
+  background: var(--white);
+  padding: 45px 35px;
+
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(7, 26, 74, 0.08);
+}
+
+.match-team {
+  text-align: center;
+}
+
+.team-placeholder {
+  width: 80px;
+  height: 80px;
+
+  margin: 0 auto 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(--navy);
+  color: var(--white);
+
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.team-placeholder.opponent {
+  background: var(--red);
+}
+
+.match-team h3 {
+  margin: 0 0 5px;
+  color: var(--navy);
+  font-size: 20px;
+}
+
+.match-team p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.match-info {
+  text-align: center;
+}
+
+.match-label {
+  display: block;
+  margin-bottom: 15px;
+
+  color: var(--red);
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.match-info strong {
+  display: block;
+  color: var(--navy);
+  font-size: 42px;
+  line-height: 1;
+}
+
+.match-info p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.match-action {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.dark-button {
+  display: inline-block;
+
+  padding: 13px 22px;
+
+  background: var(--navy);
+  color: var(--white);
+
+  border-radius: 6px;
+
+  text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dark-button:hover {
+  background: var(--red);
+}
+
+
+/* 
+====================================================================================================================
+   Latest Results
+======================================================================================================================= 
+*/
+
+.results-section {
+  background: var(--white);
+}
+
+.results-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.results-link {
+  color: var(--red);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.results-link:hover {
+  color: var(--navy);
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-card {
+  display: grid;
+  grid-template-columns: 180px 1fr 150px;
+  align-items: center;
+  gap: 30px;
+
+  padding: 22px 25px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  transition: 0.2s ease;
+}
+
+.result-card:hover {
+  border-color: var(--navy);
+  transform: translateY(-2px);
+}
+
+.result-date {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.result-date strong {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.result-date span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.result-opponent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+
+  color: var(--navy);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.result-opponent strong {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.result-score {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.result-score strong {
+  color: var(--navy);
+  font-size: 22px;
+}
+
+.result-badge {
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: var(--white);
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.result-w {
+  background: #16a34a;
+}
+
+.result-d {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+.result-l {
+  background: var(--red);
+}
+
+/* 
+====================================================================================================================
+   Upcoming Fixtures
+======================================================================================================================= 
+*/
+
+.fixtures-section {
+  background: var(--navy);
+}
+
+.fixtures-section .section-eyebrow {
+  color: var(--gold);
+}
+
+.fixtures-section .section-heading h2 {
+  color: var(--white);
+}
+
+.fixtures-section .results-link {
+  color: var(--gold);
+}
+
+.fixtures-section .results-link:hover {
+  color: var(--white);
+}
+
+.fixtures-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.fixture-card {
+  background: var(--white);
+  padding: 25px;
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.fixture-date {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.fixture-date strong {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.fixture-date span {
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fixture-match {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.fixture-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  text-align: center;
+}
+
+.fixture-team strong {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.small-team-placeholder {
+  width: 55px;
+  height: 55px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(--navy);
+  color: var(--white);
+
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.small-team-placeholder.opponent {
+  background: var(--red);
+}
+
+.fixture-vs {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.fixture-details {
+  text-align: center;
+}
+
+.fixture-details span {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.fixture-details p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* 
+====================================================================================================================
+  Team / Squad Section
+======================================================================================================================= 
+*/
+
+.team-section {
+  background: var(--white);
+}
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.player-card {
+  overflow: hidden;
+
+  background: var(--light);
+
+  border-radius: 10px;
+
+  transition: transform 0.2s ease;
+}
+
+.player-card:hover {
+  transform: translateY(-4px);
+}
+
+.player-image {
+  min-height: 280px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+
+  padding: 20px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7, 26, 74, 0.05),
+      rgba(7, 26, 74, 0.9)
+    );
+
+  color: var(--white);
+}
+
+.player-image span {
+  font-size: 70px;
+  font-weight: 900;
+  opacity: 0.8;
+}
+
+.player-info {
+  padding: 20px;
+}
+
+.player-info > span {
+  color: var(--red);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.player-info h3 {
+  margin: 7px 0;
+
+  color: var(--navy);
+
+  font-size: 20px;
+}
+
+.player-info p {
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* 
+====================================================================================================================
+  News Section
+======================================================================================================================= 
+*/
+
+.news-section {
+  background: var(--light);
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.news-card {
+  overflow: hidden;
+
+  background: var(--white);
+
+  border-radius: 10px;
+
+  box-shadow: 0 8px 25px rgba(7, 26, 74, 0.06);
+}
+
+.news-image {
+  min-height: 220px;
+
+  display: flex;
+  align-items: flex-end;
+
+  padding: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7, 26, 74, 0.05),
+      rgba(7, 26, 74, 0.9)
+    );
+}
+
+.news-image span {
+  color: var(--gold);
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.news-content {
+  padding: 22px;
+}
+
+.news-content > p {
+  margin: 0 0 10px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+.news-content h3 {
+  margin: 0 0 20px;
+
+  color: var(--navy);
+
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.news-read-more {
+  color: var(--red);
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.news-read-more:hover {
+  color: var(--navy);
+}
+
+/* 
+====================================================================================================================
+   Mobile Responsiveness
+======================================================================================================================= 
+*/
+
+@media (max-width: 768px) {
+
+  /* Navbar */
+
+  .navbar-container {
+    padding: 16px 18px;
+    flex-wrap: wrap;
+  }
+
+  .navbar-links {
+    width: 100%;
+    order: 3;
+
+    display: flex;
+    overflow-x: auto;
+    gap: 18px;
+
+    padding-top: 10px;
+    padding-bottom: 4px;
+
+    scrollbar-width: none;
+  }
+
+  .navbar-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navbar-links a {
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+
+  .navbar-button {
+    padding: 9px 15px;
+  }
+
+
+  /* Hero */
+
+  .hero {
+    min-height: 600px;
+  }
+
+  .hero-content {
+    padding: 60px 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(46px, 13vw, 68px);
+    letter-spacing: -1.5px;
+  }
+
+  .hero-text {
+    font-size: 17px;
+    margin: 22px 0 28px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-button {
+    text-align: center;
+  }
+
+
+  /* Shared sections */
+
+  .section-container {
+    padding: 60px 18px;
+  }
+
+  .section-heading {
+    margin-bottom: 28px;
+  }
+
+  .section-heading h2 {
+    font-size: 36px;
+  }
+
+
+  /* Next Match */
+
+  .match-card {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding: 30px 20px;
+  }
+
+  .match-info {
+    order: 2;
+  }
+
+  .match-team {
+    order: 1;
+  }
+
+  .match-team:last-child {
+    order: 3;
+  }
+
+  .match-info strong {
+    font-size: 36px;
+  }
+
+
+  /* Results */
+
+  .results-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .result-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .result-date {
+    text-align: center;
+  }
+
+  .result-opponent {
+    font-size: 14px;
+  }
+
+  .result-score {
+    justify-content: center;
+  }
+
+
+  /* Fixtures */
+
+  .fixtures-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fixture-card {
+    padding: 22px 18px;
+  }
+
+  .fixture-match {
+    gap: 5px;
+  }
+
+    /* Team */
+
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .player-image {
+    min-height: 190px;
+    padding: 15px;
+  }
+
+  .player-image span {
+    font-size: 50px;
+  }
+
+  .player-info {
+    padding: 15px;
+  }
+
+  .player-info h3 {
+    font-size: 16px;
+  }
+
+    /* News */
+
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .news-image {
+    min-height: 200px;
+  }
+
+}
+
+/* Desktop Navbar */
+
+@media (min-width: 769px) {
+  .navbar-container {
+    padding: 18px 24px;
+  }
+
+  .navbar-toggle {
+    display: none;
+  }
+
+  .navbar-menu {
+    position: static;
+
+    display: flex;
+    align-items: center;
+    gap: 30px;
+
+    padding: 0;
+
+    border: 0;
+  }
+
+  .navbar-links {
+    flex-direction: row;
+    gap: 24px;
+  }
+
+  .navbar-links a {
+    padding: 0;
+    border: 0;
+    font-size: 14px;
+  }
+
+  .navbar-button {
+    margin: 0;
+    padding: 11px 20px;
+  }
 }
