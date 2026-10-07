@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,9 +11,10 @@ function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-container">
-        <a href="/" className="navbar-logo" onClick={closeMenu}>
+
+        <Link to="/" className="navbar-logo" onClick={closeMenu}>
           STAREHE FC
-        </a>
+        </Link>
 
         <button
           className="navbar-toggle"
@@ -27,19 +29,47 @@ function Navbar() {
         </button>
 
         <div className={`navbar-menu ${menuOpen ? "open" : ""}`}>
+
           <nav className="navbar-links">
-            <a href="/" onClick={closeMenu}>Home</a>
-            <a href="/fixtures" onClick={closeMenu}>Fixtures</a>
-            <a href="/results" onClick={closeMenu}>Results</a>
-            <a href="/table" onClick={closeMenu}>Table</a>
-            <a href="/team" onClick={closeMenu}>Team</a>
-            <a href="/news" onClick={closeMenu}>News</a>
-            <a href="/about" onClick={closeMenu}>About</a>
+
+            <Link to="/" onClick={closeMenu}>
+              Home
+            </Link>
+
+            <Link to="/fixtures" onClick={closeMenu}>
+              Fixtures
+            </Link>
+
+            <Link to="/results" onClick={closeMenu}>
+              Results
+            </Link>
+
+            <Link to="/table" onClick={closeMenu}>
+              Table
+            </Link>
+
+            <Link to="/team" onClick={closeMenu}>
+              Team
+            </Link>
+
+            <Link to="/news" onClick={closeMenu}>
+              News
+            </Link>
+
+            <Link to="/about" onClick={closeMenu}>
+              About
+            </Link>
+
           </nav>
 
-          <a href="/contact" className="navbar-button" onClick={closeMenu}>
+          <Link
+            to="/contact"
+            className="navbar-button"
+            onClick={closeMenu}
+          >
             Contact
-          </a>
+          </Link>
+
         </div>
       </div>
     </header>
