@@ -2389,3 +2389,130 @@ body {
   }
 
 }
+
+/* 
+====================================================================================================================
+   FOOTER
+======================================================================================================================= 
+*/
+
+.footer {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.footer-main {
+  padding: 70px 0 55px;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.footer-main .footer-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 50px;
+}
+
+.footer-brand {
+  max-width: 340px;
+}
+
+.footer-logo {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--white);
+  text-decoration: none;
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.footer-brand p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.footer-column h3 {
+  margin: 0 0 18px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.footer-column a {
+  margin-bottom: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.footer-column a:hover {
+  color: var(--white);
+  transform: translateX(2px);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom-inner {
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+/* =========================
+   FOOTER MOBILE
+========================= */
+
+@media (max-width: 768px) {
+  .footer-main {
+    padding: 55px 0 40px;
+  }
+
+  .footer-main .footer-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 25px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+    max-width: 100%;
+  }
+
+  .footer-logo {
+    font-size: 22px;
+  }
+
+  .footer-bottom-inner {
+    min-height: auto;
+    padding-top: 22px;
+    padding-bottom: 22px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
