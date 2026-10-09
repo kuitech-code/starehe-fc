@@ -16,6 +16,7 @@ import AdminLayout from "./admin/AdminLayout";
 import AdminDashboard from "./admin/AdminDashboard";
 import AdminFixtures from "./admin/AdminFixtures";
 import AdminResults from "./admin/AdminResults";
+import AdminPlayers from "./admin/AdminPlayers";
 
 function PublicLayout() {
   return (
@@ -47,19 +48,11 @@ function App() {
 
         {/* ADMIN */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route
-            index
-            element={<AdminDashboard />}
-          />
+          <Route index element={<AdminDashboard />} />
+          <Route path="fixtures" element={<AdminFixtures />} />
+          <Route path="results" element={<AdminResults />} />
+          <Route path="players" element={<AdminPlayers />} />
 
-          <Route
-            path="fixtures"
-            element={<AdminFixtures />}
-          />
-          <Route
-            path="results"
-            element={<AdminResults />}
-          />
         </Route>
       </Routes>
     </HashRouter>
