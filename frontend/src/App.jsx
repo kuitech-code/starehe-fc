@@ -14,62 +14,51 @@ import Contact from "./pages/Contact";
 
 import AdminLayout from "./admin/AdminLayout";
 import AdminDashboard from "./admin/AdminDashboard";
+import AdminFixtures from "./admin/AdminFixtures";
+import AdminResults from "./admin/AdminResults";
+
+function PublicLayout() {
+  return (
+    <>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/fixtures" element={<Fixtures />} />
+        <Route path="/results" element={<Results />} />
+        <Route path="/table" element={<Table />} />
+        <Route path="/team" element={<Team />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+      </Routes>
+
+      <Footer />
+    </>
+  );
+}
 
 function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* WEBSITE */}
-
-        <Route
-          path="/*"
-          element={
-            <>
-              <Navbar />
-
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route
-                  path="/fixtures"
-                  element={<Fixtures />}
-                />
-                <Route
-                  path="/results"
-                  element={<Results />}
-                />
-                <Route
-                  path="/table"
-                  element={<Table />}
-                />
-                <Route
-                  path="/team"
-                  element={<Team />}
-                />
-                <Route
-                  path="/news"
-                  element={<News />}
-                />
-                <Route
-                  path="/about"
-                  element={<About />}
-                />
-                <Route
-                  path="/contact"
-                  element={<Contact />}
-                />
-              </Routes>
-
-              <Footer />
-            </>
-          }
-        />
+        {/* PUBLIC WEBSITE */}
+        <Route path="/*" element={<PublicLayout />} />
 
         {/* ADMIN */}
-
         <Route path="/admin" element={<AdminLayout />}>
           <Route
             index
             element={<AdminDashboard />}
+          />
+
+          <Route
+            path="fixtures"
+            element={<AdminFixtures />}
+          />
+          <Route
+            path="results"
+            element={<AdminResults />}
           />
         </Route>
       </Routes>
