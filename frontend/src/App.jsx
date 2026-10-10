@@ -17,6 +17,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import AdminFixtures from "./admin/AdminFixtures";
 import AdminResults from "./admin/AdminResults";
 import AdminPlayers from "./admin/AdminPlayers";
+import AdminNews from "./admin/AdminNews";
 
 function PublicLayout() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="fixtures" element={<AdminFixtures />} />
           <Route path="results" element={<AdminResults />} />
           <Route path="players" element={<AdminPlayers />} />
+          <Route path="news" element={<AdminNews />} />
 
         </Route>
       </Routes>
