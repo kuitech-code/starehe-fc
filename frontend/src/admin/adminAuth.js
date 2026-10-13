@@ -9,8 +9,22 @@ export function getAdminToken() {
   return sessionStorage.getItem(TOKEN_KEY);
 }
 
-export function signOutAdmin() {
+export async function signOutAdmin() {
+  const token = getAdminToken();
+
+  // Clear the browser token immediately, even if the backend is unavailable.
   sessionStorage.removeItem(TOKEN_KEY);
+
+  if (!token) return;
+
+  try {
+    await fetch(`${API_ORIGIN}/api/admin/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    // The local sign-out still succeeds if the backend cannot be reached.
+  }
 }
 
 export async function signInAdmin(password) {
@@ -74,7 +88,11 @@ function requestNeedsAdminToken(url, method) {
   const adminTableRequest =
     url.pathname.startsWith("/api/table") && !isPublicStandings;
 
-  return adminNewsRequest || adminTableRequest;
+  return (
+    url.pathname.startsWith("/api/admin/") ||
+    adminNewsRequest ||
+    adminTableRequest
+  );
 }
 
 export function installAdminFetchAuth() {

@@ -45,7 +45,9 @@ async function requestResults(path = "", options = {}) {
 function fromApi(result) {
   return {
     id: result.id,
-    date: result.match_date,
+    date: result.match_date
+      ? String(result.match_date).slice(0, 10)
+      : "",
     opponent: result.opponent,
     homeScore: result.starehe_score,
     awayScore: result.opponent_score,

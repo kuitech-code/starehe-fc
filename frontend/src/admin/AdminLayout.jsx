@@ -18,6 +18,40 @@ function AdminLayout() {
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState("");
 
+  const [adminProfile, setAdminProfile] = useState({
+    display_name: "Administrator",
+    role: "Club Admin",
+  });
+
+  useEffect(() => {
+  if (!authenticated) return;
+
+  let cancelled = false;
+
+  const updateProfile = (event) => {
+    setAdminProfile(event.detail);
+  };
+
+  window.addEventListener("starehe-admin-profile-updated", updateProfile);
+
+  fetch(
+    `${(import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "")}/api/admin/profile`
+  )
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => {
+      if (!cancelled && data) setAdminProfile(data);
+    })
+    .catch(() => {});
+
+  return () => {
+    cancelled = true;
+    window.removeEventListener(
+      "starehe-admin-profile-updated",
+      updateProfile
+    );
+  };
+}, [authenticated]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -206,7 +240,7 @@ function AdminLayout() {
 
   return (
     <div className="admin-layout">
-      <AdminSidebar menuOpen={menuOpen} closeMenu={closeMenu} />
+      <AdminSidebar menuOpen={menuOpen} closeMenu={closeMenu} onSignOut={handleSignOut} />
 
       <div className="admin-main">
         <header className="admin-topbar">
@@ -228,11 +262,11 @@ function AdminLayout() {
           </div>
 
           <div className="admin-user">
-            <div className="admin-user-avatar">A</div>
+            <div className="admin-user-avatar">{adminProfile.display_name.charAt(0)}</div>
 
             <div className="admin-user-info">
-              <strong>Administrator</strong>
-              <span>Club Admin</span>
+              <strong>{adminProfile.display_name}</strong>
+              <span>{adminProfile.role}</span>
             </div>
 
             <button

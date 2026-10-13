@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 
-function AdminSidebar({ menuOpen, closeMenu }) {
+function AdminSidebar({ menuOpen, closeMenu, onSignOut }) {
   const handleLinkClick = () => {
     if (closeMenu) {
       closeMenu();
@@ -100,7 +100,7 @@ function AdminSidebar({ menuOpen, closeMenu }) {
             Settings
           </NavLink>
 
-          <button type="button" className="admin-logout">
+          <button type="button" className="admin-logout" onClick={onSignOut}>
             <span>↪</span>
             Logout
           </button>

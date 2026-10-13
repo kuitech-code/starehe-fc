@@ -44,8 +44,9 @@ async function requestFixtures(path = "", options = {}) {
 function fromApi(fixture) {
   return {
     id: fixture.id,
-    date: fixture.match_date,
-    time: fixture.kickoff_time ? fixture.kickoff_time.slice(0, 5) : "",
+    date: fixture.match_date
+      ? String(fixture.match_date).slice(0, 10)
+      : "",    time: fixture.kickoff_time ? fixture.kickoff_time.slice(0, 5) : "",
     opponent: fixture.opponent,
     venue: fixture.venue || "",
     competition: fixture.competition || "League Match",
