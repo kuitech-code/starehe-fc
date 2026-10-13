@@ -1,59 +1,102 @@
+import { useEffect, useState } from "react";
 
-import { useState } from "react";
-
-const initialPlayers = [
-  { id: 1, name: "Brian Mwangi", number: 1, position: "Goalkeeper" },
-  { id: 2, name: "Peter Kamau", number: 22, position: "Goalkeeper" },
-  { id: 3, name: "Kevin Kariuki", number: 5, position: "Defender" },
-  { id: 4, name: "John Maina", number: 3, position: "Defender" },
-  { id: 5, name: "Dennis Njoroge", number: 4, position: "Defender" },
-  { id: 6, name: "Eric Wambui", number: 2, position: "Defender" },
-  { id: 7, name: "David Maina", number: 8, position: "Midfielder" },
-  { id: 8, name: "Samuel Kariuki", number: 6, position: "Midfielder" },
-  { id: 9, name: "James Mwangi", number: 10, position: "Midfielder" },
-  { id: 10, name: "Martin Ndirangu", number: 7, position: "Midfielder" },
-  { id: 11, name: "Samuel Njoroge", number: 9, position: "Forward" },
-  { id: 12, name: "Alex Kariuki", number: 11, position: "Forward" },
-  { id: 13, name: "Victor Maina", number: 17, position: "Forward" },
-];
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
+  .replace(/\/+$/, "");
+const API_URL = `${API_ORIGIN}/api/players`;
 
 const emptyForm = {
   name: "",
   number: "",
   position: "Goalkeeper",
+  photoUrl: "",
 };
 
-const positions = [
-  "Goalkeeper",
-  "Defender",
-  "Midfielder",
-  "Forward",
-];
+const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+
+async function requestPlayers(path = "", options = {}) {
+  let response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error("Could not reach the backend. Make sure it is running on port 5000.");
+  }
+
+  if (response.status === 204) return null;
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = Array.isArray(data.details)
+      ? ` ${data.details.join(". ")}.`
+      : "";
+    throw new Error(`${data.error || "The request failed."}${details}`);
+  }
+
+  return data;
+}
+
+function fromApi(player) {
+  return {
+    id: player.id,
+    name: player.full_name,
+    number: player.shirt_number,
+    position: player.position,
+    photoUrl: player.photo_url || "",
+  };
+}
 
 function AdminPlayers() {
-  const [players, setPlayers] = useState(initialPlayers);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [pageError, setPageError] = useState("");
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState("All");
 
+  useEffect(() => {
+    let cancelled = false;
+
+    requestPlayers()
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("The players API returned an unexpected response.");
+        }
+        if (!cancelled) setPlayers(data.map(fromApi));
+      })
+      .catch((err) => {
+        if (!cancelled) setPageError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
-
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-    }));
-
+    setFormData((current) => ({ ...current, [name]: value }));
     setError("");
+    setPageError("");
   };
 
   const openNewForm = () => {
     setFormData({ ...emptyForm });
     setEditingId(null);
     setError("");
+    setPageError("");
     setShowForm(true);
   };
 
@@ -69,91 +112,85 @@ function AdminPlayers() {
       name: player.name,
       number: String(player.number),
       position: player.position,
+      photoUrl: player.photoUrl || "",
     });
-
     setEditingId(player.id);
     setError("");
+    setPageError("");
     setShowForm(true);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const name = formData.name.trim();
     const number = Number(formData.number);
+    const photoUrl = formData.photoUrl.trim();
 
     if (!name) {
       setError("Please enter the player's name.");
       return;
     }
 
-    if (
-      !Number.isInteger(number) ||
-      number < 1 ||
-      number > 99
-    ) {
+    if (!Number.isInteger(number) || number < 1 || number > 99) {
       setError("Shirt number must be a whole number from 1 to 99.");
       return;
     }
 
-    const duplicateNumber = players.some(
-      (player) =>
-        player.number === number &&
-        player.id !== editingId
-    );
-
-    if (duplicateNumber) {
-      setError("That shirt number is already assigned to another player.");
-      return;
-    }
-
-    const updatedPlayer = {
-      name,
-      number,
+    const payload = {
+      full_name: name,
+      shirt_number: number,
       position: formData.position,
+      photo_url: photoUrl || null,
     };
 
-    if (editingId !== null) {
-      setPlayers((current) =>
-        current.map((player) =>
-          player.id === editingId
-            ? { ...player, ...updatedPlayer }
-            : player
-        )
-      );
-    } else {
-      setPlayers((current) => [
-        ...current,
-        {
-          id: Date.now(),
-          ...updatedPlayer,
-        },
-      ]);
-    }
+    setSaving(true);
+    setError("");
+    setPageError("");
 
-    closeForm();
+    try {
+      const saved = await requestPlayers(
+        editingId === null ? "" : `/${editingId}`,
+        {
+          method: editingId === null ? "POST" : "PUT",
+          body: JSON.stringify(payload),
+        },
+      );
+      const player = fromApi(saved);
+
+      setPlayers((current) => {
+        const next = editingId === null
+          ? [...current, player]
+          : current.map((item) => item.id === editingId ? player : item);
+        return next.sort((a, b) => a.number - b.number);
+      });
+      closeForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (player) => {
-    const confirmed = window.confirm(
-      `Remove ${player.name} from the squad?`
-    );
-
+  const handleDelete = async (player) => {
+    const confirmed = window.confirm(`Remove ${player.name} from the squad?`);
     if (!confirmed) return;
 
-    setPlayers((current) =>
-      current.filter((item) => item.id !== player.id)
-    );
+    setPageError("");
+    try {
+      await requestPlayers(`/${player.id}`, { method: "DELETE" });
+      setPlayers((current) => current.filter((item) => item.id !== player.id));
+    } catch (err) {
+      setPageError(err.message);
+    }
   };
 
   const filteredPlayers = players
     .filter((player) =>
       player.name.toLowerCase().includes(search.toLowerCase().trim())
     )
-    .filter(
-      (player) =>
-        positionFilter === "All" ||
-        player.position === positionFilter
+    .filter((player) =>
+      positionFilter === "All" || player.position === positionFilter
     )
     .sort((a, b) => a.number - b.number);
 
@@ -161,7 +198,6 @@ function AdminPlayers() {
     counts[position] = players.filter(
       (player) => player.position === position
     ).length;
-
     return counts;
   }, {});
 
@@ -182,6 +218,10 @@ function AdminPlayers() {
           + Add Player
         </button>
       </div>
+
+      {pageError && (
+        <p className="admin-form-error" role="alert">{pageError}</p>
+      )}
 
       <section className="admin-player-stats">
         <article>
@@ -204,9 +244,7 @@ function AdminPlayers() {
               <p className="admin-eyebrow">
                 {editingId !== null ? "EDIT PLAYER" : "NEW PLAYER"}
               </p>
-              <h2>
-                {editingId !== null ? "Edit player" : "Add player"}
-              </h2>
+              <h2>{editingId !== null ? "Edit player" : "Add player"}</h2>
             </div>
 
             <button
@@ -229,8 +267,20 @@ function AdminPlayers() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Brian Mwangi"
-                  maxLength={100}
+                  maxLength={120}
                   required
+                />
+              </div>
+
+              <div className="admin-form-group">
+                <label htmlFor="player-photo-url">Photo URL</label>
+                <input
+                  id="player-photo-url"
+                  name="photoUrl"
+                  type="url"
+                  value={formData.photoUrl}
+                  onChange={handleChange}
+                  placeholder="https://example.com/player.jpg"
                 />
               </div>
 
@@ -268,9 +318,7 @@ function AdminPlayers() {
             </div>
 
             {error && (
-              <p className="admin-form-error" role="alert">
-                {error}
-              </p>
+              <p className="admin-form-error" role="alert">{error}</p>
             )}
 
             <div className="admin-form-actions">
@@ -278,6 +326,7 @@ function AdminPlayers() {
                 type="button"
                 className="admin-secondary-button"
                 onClick={closeForm}
+                disabled={saving}
               >
                 Cancel
               </button>
@@ -285,8 +334,13 @@ function AdminPlayers() {
               <button
                 type="submit"
                 className="admin-primary-button"
+                disabled={saving}
               >
-                {editingId !== null ? "Save Changes" : "Add Player"}
+                {saving
+                  ? "Saving..."
+                  : editingId !== null
+                    ? "Save Changes"
+                    : "Add Player"}
               </button>
             </div>
           </form>
@@ -328,7 +382,11 @@ function AdminPlayers() {
           </select>
         </div>
 
-        {filteredPlayers.length === 0 ? (
+        {loading ? (
+          <div className="admin-empty-state">
+            <strong>Loading players...</strong>
+          </div>
+        ) : filteredPlayers.length === 0 ? (
           <div className="admin-empty-state">
             <strong>No players found.</strong>
             <p>Try another search or add a new player.</p>
@@ -339,7 +397,28 @@ function AdminPlayers() {
               <article className="admin-player-card" key={player.id}>
                 <div className="admin-player-card-top">
                   <div className="admin-player-avatar">
-                    {player.number}
+                    {player.photoUrl ? (
+                      <>
+                        <img
+                          src={player.photoUrl}
+                          alt={player.name}
+                          onError={(event) => {
+                            event.currentTarget.hidden = true;
+                            const fallback = event.currentTarget.nextElementSibling;
+                            if (fallback) fallback.hidden = false;
+                          }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "inherit",
+                          }}
+                        />
+                        <span hidden>{player.number}</span>
+                      </>
+                    ) : (
+                      player.number
+                    )}
                   </div>
 
                   <span className="admin-player-position">
@@ -379,3 +458,4 @@ function AdminPlayers() {
 }
 
 export default AdminPlayers;
+

@@ -1,48 +1,8 @@
+import { useEffect, useState } from "react";
 
-import { useState } from "react";
-
-const initialResults = [
-  {
-    id: 1,
-    date: "2026-10-12",
-    opponent: "Murai FC",
-    homeScore: 3,
-    awayScore: 1,
-    home: true,
-    venue: "Starehe Grounds",
-    competition: "League Match",
-  },
-  {
-    id: 2,
-    date: "2026-10-05",
-    opponent: "Ndaragwa United",
-    homeScore: 1,
-    awayScore: 1,
-    home: true,
-    venue: "Starehe Grounds",
-    competition: "League Match",
-  },
-  {
-    id: 3,
-    date: "2026-09-28",
-    opponent: "Nyeri City",
-    homeScore: 0,
-    awayScore: 2,
-    home: false,
-    venue: "Nyeri Stadium",
-    competition: "Cup Match",
-  },
-  {
-    id: 4,
-    date: "2026-09-21",
-    opponent: "Karatina FC",
-    homeScore: 2,
-    awayScore: 0,
-    home: true,
-    venue: "Starehe Grounds",
-    competition: "League Match",
-  },
-];
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
+  .replace(/\/+$/, "");
+const API_URL = `${API_ORIGIN}/api/results`;
 
 const emptyForm = {
   date: "",
@@ -54,28 +14,94 @@ const emptyForm = {
   competition: "League Match",
 };
 
+async function requestResults(path = "", options = {}) {
+  let response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new Error("Could not reach the backend. Make sure it is running on port 5000.");
+  }
+
+  if (response.status === 204) return null;
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = Array.isArray(data.details)
+      ? ` ${data.details.join(". ")}.`
+      : "";
+    throw new Error(`${data.error || "The request failed."}${details}`);
+  }
+
+  return data;
+}
+
+function fromApi(result) {
+  return {
+    id: result.id,
+    date: result.match_date,
+    opponent: result.opponent,
+    homeScore: result.starehe_score,
+    awayScore: result.opponent_score,
+    home: result.is_home,
+    venue: result.venue || "",
+    competition: result.competition || "League Match",
+  };
+}
+
 function AdminResults() {
-  const [results, setResults] = useState(initialResults);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [pageError, setPageError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    requestResults()
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("The results API returned an unexpected response.");
+        }
+        if (!cancelled) setResults(data.map(fromApi));
+      })
+      .catch((err) => {
+        if (!cancelled) setPageError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-
     setFormData((current) => ({
       ...current,
       [name]: type === "checkbox" ? checked : value,
     }));
-
     setError("");
+    setPageError("");
   };
 
   const openNewForm = () => {
     setFormData({ ...emptyForm });
     setEditingId(null);
     setError("");
+    setPageError("");
     setShowForm(true);
   };
 
@@ -96,97 +122,102 @@ function AdminResults() {
       venue: result.venue,
       competition: result.competition,
     });
-
     setEditingId(result.id);
     setError("");
+    setPageError("");
     setShowForm(true);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const homeScore = Number(formData.homeScore);
-    const awayScore = Number(formData.awayScore);
+    const opponent = formData.opponent.trim();
+    const venue = formData.venue.trim();
+    const stareheScore = Number(formData.homeScore);
+    const opponentScore = Number(formData.awayScore);
+
+    if (!formData.date || !opponent || !venue) {
+      setError("Please enter the date, opponent, and venue.");
+      return;
+    }
 
     if (
-      !Number.isInteger(homeScore) ||
-      !Number.isInteger(awayScore) ||
-      homeScore < 0 ||
-      awayScore < 0
+      formData.homeScore === "" ||
+      formData.awayScore === "" ||
+      !Number.isInteger(stareheScore) ||
+      !Number.isInteger(opponentScore) ||
+      stareheScore < 0 ||
+      opponentScore < 0 ||
+      stareheScore > 32767 ||
+      opponentScore > 32767
     ) {
-      setError("Scores must be whole numbers of zero or more.");
+      setError("Scores must be whole numbers from 0 to 32767.");
       return;
     }
 
-    const cleanedResult = {
-      ...formData,
-      opponent: formData.opponent.trim(),
-      venue: formData.venue.trim(),
-      homeScore,
-      awayScore,
+    const payload = {
+      match_date: formData.date,
+      opponent,
+      starehe_score: stareheScore,
+      opponent_score: opponentScore,
+      is_home: formData.home,
+      venue,
+      competition: formData.competition,
     };
 
-    if (!cleanedResult.opponent || !cleanedResult.venue) {
-      setError("Please enter the opponent and venue.");
-      return;
-    }
+    setSaving(true);
+    setError("");
+    setPageError("");
 
-    if (editingId !== null) {
-      setResults((current) =>
-        current.map((result) =>
-          result.id === editingId
-            ? { ...result, ...cleanedResult }
-            : result
-        )
-      );
-    } else {
-      setResults((current) => [
+    try {
+      const saved = await requestResults(
+        editingId === null ? "" : `/${editingId}`,
         {
-          id: Date.now(),
-          ...cleanedResult,
+          method: editingId === null ? "POST" : "PUT",
+          body: JSON.stringify(payload),
         },
-        ...current,
-      ]);
-    }
+      );
+      const result = fromApi(saved);
 
-    closeForm();
+      setResults((current) => {
+        const next = editingId === null
+          ? [...current, result]
+          : current.map((item) => item.id === editingId ? result : item);
+        return next.sort((a, b) => b.date.localeCompare(a.date));
+      });
+      closeForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Delete this match result?")) {
-      return;
-    }
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this match result?")) return;
 
-    setResults((current) =>
-      current.filter((result) => result.id !== id)
-    );
+    setPageError("");
+    try {
+      await requestResults(`/${id}`, { method: "DELETE" });
+      setResults((current) => current.filter((result) => result.id !== id));
+    } catch (err) {
+      setPageError(err.message);
+    }
   };
 
   const getOutcome = (result) => {
-    const stareheScore = result.home
-      ? result.homeScore
-      : result.awayScore;
-
-    const opponentScore = result.home
-      ? result.awayScore
-      : result.homeScore;
-
-    if (stareheScore > opponentScore) return "W";
-    if (stareheScore < opponentScore) return "L";
+    if (result.homeScore > result.awayScore) return "W";
+    if (result.homeScore < result.awayScore) return "L";
     return "D";
   };
 
   const formatDate = (date) => {
     if (!date) return "";
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString(
-      "en-GB",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }
-    );
+    return new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   return (
@@ -207,6 +238,10 @@ function AdminResults() {
         </button>
       </div>
 
+      {pageError && (
+        <p className="admin-form-error" role="alert">{pageError}</p>
+      )}
+
       {showForm && (
         <section className="admin-form-card">
           <div className="admin-form-header">
@@ -214,9 +249,7 @@ function AdminResults() {
               <p className="admin-eyebrow">
                 {editingId !== null ? "EDIT RESULT" : "NEW RESULT"}
               </p>
-              <h2>
-                {editingId !== null ? "Edit result" : "Record result"}
-              </h2>
+              <h2>{editingId !== null ? "Edit result" : "Record result"}</h2>
             </div>
 
             <button
@@ -224,6 +257,7 @@ function AdminResults() {
               className="admin-close-button"
               onClick={closeForm}
               aria-label="Close form"
+              disabled={saving}
             >
               ×
             </button>
@@ -251,6 +285,7 @@ function AdminResults() {
                   value={formData.opponent}
                   onChange={handleChange}
                   placeholder="e.g. Murai FC"
+                  maxLength={120}
                   required
                 />
               </div>
@@ -262,6 +297,7 @@ function AdminResults() {
                   name="homeScore"
                   type="number"
                   min="0"
+                  max="32767"
                   step="1"
                   value={formData.homeScore}
                   onChange={handleChange}
@@ -276,6 +312,7 @@ function AdminResults() {
                   name="awayScore"
                   type="number"
                   min="0"
+                  max="32767"
                   step="1"
                   value={formData.awayScore}
                   onChange={handleChange}
@@ -291,6 +328,7 @@ function AdminResults() {
                   value={formData.venue}
                   onChange={handleChange}
                   placeholder="Match venue"
+                  maxLength={200}
                   required
                 />
               </div>
@@ -325,9 +363,7 @@ function AdminResults() {
             </div>
 
             {error && (
-              <p className="admin-form-error" role="alert">
-                {error}
-              </p>
+              <p className="admin-form-error" role="alert">{error}</p>
             )}
 
             <div className="admin-form-actions">
@@ -335,6 +371,7 @@ function AdminResults() {
                 type="button"
                 className="admin-secondary-button"
                 onClick={closeForm}
+                disabled={saving}
               >
                 Cancel
               </button>
@@ -342,8 +379,13 @@ function AdminResults() {
               <button
                 type="submit"
                 className="admin-primary-button"
+                disabled={saving}
               >
-                {editingId !== null ? "Save Changes" : "Save Result"}
+                {saving
+                  ? "Saving..."
+                  : editingId !== null
+                    ? "Save Changes"
+                    : "Save Result"}
               </button>
             </div>
           </form>
@@ -357,12 +399,14 @@ function AdminResults() {
             <h2>Recorded Results</h2>
           </div>
 
-          <span className="admin-count">
-            {results.length} results
-          </span>
+          <span className="admin-count">{results.length} results</span>
         </div>
 
-        {results.length === 0 ? (
+        {loading ? (
+          <div className="admin-empty-state">
+            <strong>Loading results...</strong>
+          </div>
+        ) : results.length === 0 ? (
           <div className="admin-empty-state">
             <strong>No results recorded yet.</strong>
             <p>Use Add Result to record a completed match.</p>
@@ -371,6 +415,8 @@ function AdminResults() {
           <div className="admin-fixture-list">
             {results.map((result) => {
               const outcome = getOutcome(result);
+              const leftScore = result.home ? result.homeScore : result.awayScore;
+              const rightScore = result.home ? result.awayScore : result.homeScore;
 
               return (
                 <article className="admin-fixture-card" key={result.id}>
@@ -381,25 +427,13 @@ function AdminResults() {
 
                   <div className="admin-result-match">
                     <span className={`admin-outcome outcome-${outcome.toLowerCase()}`}>
-                      {outcome === "W"
-                        ? "WIN"
-                        : outcome === "D"
-                          ? "DRAW"
-                          : "LOSS"}
+                      {outcome === "W" ? "WIN" : outcome === "D" ? "DRAW" : "LOSS"}
                     </span>
 
                     <div className="admin-result-scoreline">
-                      <span>
-                        {result.home ? "STAREHE FC" : result.opponent}
-                      </span>
-
-                      <strong>
-                        {result.homeScore} - {result.awayScore}
-                      </strong>
-
-                      <span>
-                        {result.home ? result.opponent : "STAREHE FC"}
-                      </span>
+                      <span>{result.home ? "STAREHE FC" : result.opponent}</span>
+                      <strong>{leftScore} - {rightScore}</strong>
+                      <span>{result.home ? result.opponent : "STAREHE FC"}</span>
                     </div>
 
                     <p>{result.venue}</p>
@@ -433,3 +467,4 @@ function AdminResults() {
 }
 
 export default AdminResults;
+

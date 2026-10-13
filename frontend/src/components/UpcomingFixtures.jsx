@@ -1,27 +1,38 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { fetchApiList, formatDate, formatTime } from "../api";
+
 function UpcomingFixtures() {
-  const fixtures = [
-    {
-      date: "18 October 2026",
-      time: "3:00 PM",
-      opponent: "Murai FC",
-      venue: "Starehe Grounds",
-      home: true,
-    },
-    {
-      date: "25 October 2026",
-      time: "2:00 PM",
-      opponent: "Ndaragwa United",
-      venue: "Ndaragwa Stadium",
-      home: false,
-    },
-    {
-      date: "1 November 2026",
-      time: "3:30 PM",
-      opponent: "Nyeri City",
-      venue: "Starehe Grounds",
-      home: true,
-    },
-  ];
+  const [fixtures, setFixtures] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchApiList("/api/fixtures", "fixtures")
+      .then((data) => {
+        if (!cancelled) {
+          setFixtures(
+            data
+              .filter(
+                (item) => !["Completed", "Cancelled"].includes(item.status)
+              )
+              .slice(0, 3)
+          );
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="fixtures-section">
@@ -31,46 +42,50 @@ function UpcomingFixtures() {
             <p className="section-eyebrow">UPCOMING FIXTURES</p>
             <h2>What's next?</h2>
           </div>
-
-          <a href="/fixtures" className="results-link">
+          <Link to="/fixtures" className="results-link">
             View All Fixtures →
-          </a>
+          </Link>
         </div>
 
-        <div className="fixtures-grid">
-          {fixtures.map((fixture) => (
-            <article
-              className="fixture-card"
-              key={`${fixture.date}-${fixture.opponent}`}
-            >
-              <div className="fixture-date">
-                <strong>{fixture.date}</strong>
-                <span>{fixture.time}</span>
-              </div>
-
-              <div className="fixture-match">
-                <div className="fixture-team">
-                  <div className="small-team-placeholder">S</div>
-                  <strong>Starehe FC</strong>
+        {loading ? (
+          <p role="status">Loading fixtures...</p>
+        ) : error ? (
+          <p role="alert">{error}</p>
+        ) : fixtures.length === 0 ? (
+          <p>No upcoming fixtures have been added yet.</p>
+        ) : (
+          <div className="fixtures-grid">
+            {fixtures.map((fixture) => (
+              <article className="fixture-card" key={fixture.id}>
+                <div className="fixture-date">
+                  <strong>{formatDate(fixture.match_date)}</strong>
+                  <span>{formatTime(fixture.kickoff_time)}</span>
                 </div>
 
-                <span className="fixture-vs">VS</span>
-
-                <div className="fixture-team">
-                  <div className="small-team-placeholder opponent">
-                    {fixture.opponent.charAt(0)}
+                <div className="fixture-match">
+                  <div className="fixture-team">
+                    <div className="small-team-placeholder">S</div>
+                    <strong>Starehe FC</strong>
                   </div>
-                  <strong>{fixture.opponent}</strong>
-                </div>
-              </div>
 
-              <div className="fixture-details">
-                <span>{fixture.home ? "HOME" : "AWAY"}</span>
-                <p>{fixture.venue}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+                  <span className="fixture-vs">VS</span>
+
+                  <div className="fixture-team">
+                    <div className="small-team-placeholder opponent">
+                      {fixture.opponent?.charAt(0) || "O"}
+                    </div>
+                    <strong>{fixture.opponent}</strong>
+                  </div>
+                </div>
+
+                <div className="fixture-details">
+                  <span>{fixture.is_home ? "HOME" : "AWAY"}</span>
+                  <p>{fixture.venue || "Venue to be confirmed"}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

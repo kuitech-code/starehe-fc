@@ -1,30 +1,30 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { fetchApiList, formatDate, resultLetter } from "../api";
+
 function LatestResults() {
-  const results = [
-    {
-      opponent: "Murai FC",
-      date: "12 October 2026",
-      competition: "League Match",
-      homeScore: 3,
-      awayScore: 1,
-      result: "W",
-    },
-    {
-      opponent: "Ndaragwa United",
-      date: "5 October 2026",
-      competition: "League Match",
-      homeScore: 1,
-      awayScore: 1,
-      result: "D",
-    },
-    {
-      opponent: "Nyeri City",
-      date: "28 September 2026",
-      competition: "Cup Match",
-      homeScore: 0,
-      awayScore: 2,
-      result: "L",
-    },
-  ];
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchApiList("/api/results", "results")
+      .then((data) => {
+        if (!cancelled) setResults(data.slice(0, 3));
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="results-section">
@@ -34,38 +34,50 @@ function LatestResults() {
             <p className="section-eyebrow">LATEST RESULTS</p>
             <h2>How we have been doing.</h2>
           </div>
-
-          <a href="/results" className="results-link">
+          <Link to="/results" className="results-link">
             View All Results →
-          </a>
+          </Link>
         </div>
 
-        <div className="results-list">
-          {results.map((match) => (
-            <article className="result-card" key={`${match.opponent}-${match.date}`}>
-              <div className="result-date">
-                <strong>{match.date}</strong>
-                <span>{match.competition}</span>
-              </div>
+        {loading ? (
+          <p role="status">Loading results...</p>
+        ) : error ? (
+          <p role="alert">{error}</p>
+        ) : results.length === 0 ? (
+          <p>No results have been added yet.</p>
+        ) : (
+          <div className="results-list">
+            {results.map((match) => {
+              const result = resultLetter(match);
 
-              <div className="result-opponent">
-                <span>Starehe FC</span>
-                <strong>vs</strong>
-                <span>{match.opponent}</span>
-              </div>
+              return (
+                <article className="result-card" key={match.id}>
+                  <div className="result-date">
+                    <strong>{formatDate(match.match_date)}</strong>
+                    <span>{match.competition || "Match"} </span>
+                  </div>
 
-              <div className="result-score">
-                <strong>
-                  {match.homeScore} - {match.awayScore}
-                </strong>
+                  <div className="result-opponent">
+                    <span>Starehe FC</span>
+                    <strong>vs</strong>
+                    <span>{match.opponent}</span>
+                  </div>
 
-                <span className={`result-badge result-${match.result.toLowerCase()}`}>
-                  {match.result}
-                </span>
-              </div>
-            </article>
-          ))}
-        </div>
+                  <div className="result-score">
+                    <strong>
+                      {match.starehe_score} - {match.opponent_score}
+                    </strong>
+                    <span
+                      className={`result-badge result-${result.toLowerCase()}`}
+                    >
+                      {result}
+                    </span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
