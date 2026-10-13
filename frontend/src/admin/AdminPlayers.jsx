@@ -3,15 +3,23 @@ import { useEffect, useState } from "react";
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
   .replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/players`;
+const PHOTO_UPLOAD_URL = `${API_ORIGIN}/api/uploads/player-photo`;
 
 const emptyForm = {
   name: "",
   number: "",
   position: "Goalkeeper",
   photoUrl: "",
+  photoFile: null,
 };
 
 const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
+const allowedPhotoTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
 
 async function requestPlayers(path = "", options = {}) {
   let response;
@@ -25,7 +33,7 @@ async function requestPlayers(path = "", options = {}) {
       },
     });
   } catch {
-    throw new Error("Could not reach the backend. Make sure it is running on port 5000.");
+    throw new Error("Could not reach the backend. Please try again.");
   }
 
   if (response.status === 204) return null;
@@ -39,6 +47,30 @@ async function requestPlayers(path = "", options = {}) {
   }
 
   return data;
+}
+
+async function uploadPlayerPhoto(file) {
+  const body = new FormData();
+  body.append("image", file);
+
+  let response;
+
+  try {
+    response = await fetch(PHOTO_UPLOAD_URL, {
+      method: "POST",
+      body,
+    });
+  } catch {
+    throw new Error("Could not reach the backend to upload the photo.");
+  }
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "The photo upload failed.");
+  }
+
+  return data.imageUrl;
 }
 
 function fromApi(player) {
@@ -92,6 +124,32 @@ function AdminPlayers() {
     setPageError("");
   };
 
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0] || null;
+
+    if (!file) return;
+
+    if (!allowedPhotoTypes.has(file.type)) {
+      setError("Choose a JPG, PNG, WebP, or GIF image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Choose an image that is 5 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+
+    setFormData((current) => ({
+      ...current,
+      photoFile: file,
+      photoUrl: "",
+    }));
+    setError("");
+    setPageError("");
+  };
+
   const openNewForm = () => {
     setFormData({ ...emptyForm });
     setEditingId(null);
@@ -113,6 +171,7 @@ function AdminPlayers() {
       number: String(player.number),
       position: player.position,
       photoUrl: player.photoUrl || "",
+      photoFile: null,
     });
     setEditingId(player.id);
     setError("");
@@ -125,7 +184,6 @@ function AdminPlayers() {
 
     const name = formData.name.trim();
     const number = Number(formData.number);
-    const photoUrl = formData.photoUrl.trim();
 
     if (!name) {
       setError("Please enter the player's name.");
@@ -137,18 +195,24 @@ function AdminPlayers() {
       return;
     }
 
-    const payload = {
-      full_name: name,
-      shirt_number: number,
-      position: formData.position,
-      photo_url: photoUrl || null,
-    };
-
     setSaving(true);
     setError("");
     setPageError("");
 
     try {
+      let photoUrl = formData.photoUrl.trim();
+
+      if (formData.photoFile) {
+        photoUrl = await uploadPlayerPhoto(formData.photoFile);
+      }
+
+      const payload = {
+        full_name: name,
+        shirt_number: number,
+        position: formData.position,
+        photo_url: photoUrl || null,
+      };
+
       const saved = await requestPlayers(
         editingId === null ? "" : `/${editingId}`,
         {
@@ -156,6 +220,7 @@ function AdminPlayers() {
           body: JSON.stringify(payload),
         },
       );
+
       const player = fromApi(saved);
 
       setPlayers((current) => {
@@ -164,6 +229,7 @@ function AdminPlayers() {
           : current.map((item) => item.id === editingId ? player : item);
         return next.sort((a, b) => a.number - b.number);
       });
+
       closeForm();
     } catch (err) {
       setError(err.message);
@@ -177,6 +243,7 @@ function AdminPlayers() {
     if (!confirmed) return;
 
     setPageError("");
+
     try {
       await requestPlayers(`/${player.id}`, { method: "DELETE" });
       setPlayers((current) => current.filter((item) => item.id !== player.id));
@@ -282,6 +349,23 @@ function AdminPlayers() {
                   onChange={handleChange}
                   placeholder="https://example.com/player.jpg"
                 />
+              </div>
+
+              <div className="admin-form-group">
+                <label htmlFor="player-photo-file">Or upload a photo</label>
+                <input
+                  id="player-photo-file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handlePhotoChange}
+                />
+                <small>
+                  JPG, PNG, WebP, or GIF, up to 5 MB.
+                  Uploading a file replaces the Photo URL.
+                </small>
+                {formData.photoFile && (
+                  <small>Selected: {formData.photoFile.name}</small>
+                )}
               </div>
 
               <div className="admin-form-group">
@@ -458,4 +542,3 @@ function AdminPlayers() {
 }
 
 export default AdminPlayers;
-
