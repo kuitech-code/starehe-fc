@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import clubLogo from "../assets/starehe-fc-logo.png";
 
 function Footer() {
   return (
@@ -7,7 +8,8 @@ function Footer() {
         <div className="footer-container">
           <div className="footer-brand">
             <Link to="/" className="footer-logo">
-              STAREHE FC
+              <img src={clubLogo} alt="" aria-hidden="true" />
+              <span>STAREHE FC</span>
             </Link>
 
             <p>

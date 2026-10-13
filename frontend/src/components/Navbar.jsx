@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import clubLogo from "../assets/starehe-fc-logo.png";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,7 +14,8 @@ function Navbar() {
       <div className="navbar-container">
 
         <Link to="/" className="navbar-logo" onClick={closeMenu}>
-          STAREHE FC
+          <img src={clubLogo} alt="" aria-hidden="true" />
+          <span>STAREHE FC</span>
         </Link>
 
         <button

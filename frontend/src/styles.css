@@ -43,11 +43,27 @@ body {
 }
 
 .navbar-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--white);
   text-decoration: none;
   font-size: 21px;
   font-weight: 900;
   letter-spacing: 1px;
+}
+
+.navbar-logo img {
+  display: block;
+  width: 69px;
+  height: 69px;
+  padding: 4px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 15px;
+  /* background: #ffffff; */
+  background: linear-gradient(135deg, #fffde7 0%, #ffe36e 48%, #f5c400 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55), 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .navbar-toggle {
@@ -2422,13 +2438,27 @@ body {
 }
 
 .footer-logo {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 18px;
   color: var(--white);
   text-decoration: none;
   font-size: 25px;
   font-weight: 900;
   letter-spacing: 1px;
+}
+
+.footer-logo img {
+  display: block;
+  width: 82px;
+  height: 82px;
+  padding: 5px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #fffde7 0%, #ffe36e 48%, #f5c400 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55), 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .footer-brand p {
