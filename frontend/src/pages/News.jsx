@@ -49,7 +49,7 @@ function News() {
         </div>
       </section>
 
-      <section className="news-page-content">
+      <section className="news-page-content faded-background">
         <div className="section-container">
           <div className="news-page-heading">
             <p className="section-eyebrow">FROM THE CLUB</p>

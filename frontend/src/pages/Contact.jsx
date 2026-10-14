@@ -1,6 +1,21 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import SupportUs from "../components/SupportUs";
 
 function Contact() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash !== "#donation") return;
+
+    window.setTimeout(() => {
+      document.getElementById("donation")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 0);
+  }, [location.hash]);
+
   return (
     <main className="contact-page">
 

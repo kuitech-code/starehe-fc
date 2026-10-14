@@ -103,7 +103,7 @@ function SupportUs() {
   }
 
   return (
-    <section className="support-us-section" aria-labelledby="support-us-heading">
+    <section id="donation" className="support-us-section" aria-labelledby="support-us-heading">
       <div className="section-container support-us-container">
         <div className="support-us-card">
           <div className="support-us-copy">

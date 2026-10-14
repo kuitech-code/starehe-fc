@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
+import ClubBadge from "../components/ClubBadge";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
   .replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/results`;
+const TEAMS_API_URL = `${API_ORIGIN}/api/table/teams`;
 
 const emptyForm = {
   date: "",
-  opponent: "",
+  opponent_team_id: "",
   homeScore: "",
   awayScore: "",
   home: true,
@@ -42,13 +44,28 @@ async function requestResults(path = "", options = {}) {
   return data;
 }
 
+async function requestTeams() {
+  let response;
+  try {
+    response = await fetch(TEAMS_API_URL);
+  } catch {
+    throw new Error("Could not load the saved league teams.");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Could not load the saved league teams.");
+  if (!Array.isArray(data)) throw new Error("The teams API returned an unexpected response.");
+  return data;
+}
+
 function fromApi(result) {
   return {
     id: result.id,
+    opponent_team_id: String(result.opponent_team_id || ""),
     date: result.match_date
       ? String(result.match_date).slice(0, 10)
       : "",
     opponent: result.opponent,
+    opponentLogoUrl: result.opponent_logo_url || "",
     homeScore: result.starehe_score,
     awayScore: result.opponent_score,
     home: result.is_home,
@@ -59,6 +76,7 @@ function fromApi(result) {
 
 function AdminResults() {
   const [results, setResults] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -70,12 +88,15 @@ function AdminResults() {
   useEffect(() => {
     let cancelled = false;
 
-    requestResults()
-      .then((data) => {
+    Promise.all([requestResults(), requestTeams()])
+      .then(([data, teamData]) => {
         if (!Array.isArray(data)) {
           throw new Error("The results API returned an unexpected response.");
         }
-        if (!cancelled) setResults(data.map(fromApi));
+        if (!cancelled) {
+          setTeams(teamData.filter((team) => team.name.trim().toLowerCase() !== "starehe fc"));
+          setResults(data.map(fromApi));
+        }
       })
       .catch((err) => {
         if (!cancelled) setPageError(err.message);
@@ -117,7 +138,7 @@ function AdminResults() {
   const handleEdit = (result) => {
     setFormData({
       date: result.date,
-      opponent: result.opponent,
+      opponent_team_id: String(result.opponent_team_id || ""),
       homeScore: String(result.homeScore),
       awayScore: String(result.awayScore),
       home: result.home,
@@ -133,13 +154,12 @@ function AdminResults() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const opponent = formData.opponent.trim();
     const venue = formData.venue.trim();
     const stareheScore = Number(formData.homeScore);
     const opponentScore = Number(formData.awayScore);
 
-    if (!formData.date || !opponent || !venue) {
-      setError("Please enter the date, opponent, and venue.");
+    if (!formData.date || !formData.opponent_team_id || !venue) {
+      setError("Please choose a saved team and enter the date and venue.");
       return;
     }
 
@@ -159,7 +179,7 @@ function AdminResults() {
 
     const payload = {
       match_date: formData.date,
-      opponent,
+      opponent_team_id: Number(formData.opponent_team_id),
       starehe_score: stareheScore,
       opponent_score: opponentScore,
       is_home: formData.home,
@@ -280,16 +300,18 @@ function AdminResults() {
               </div>
 
               <div className="admin-form-group">
-                <label htmlFor="result-opponent">Opponent</label>
-                <input
+                <label htmlFor="result-opponent">Opponent team</label>
+                <select
                   id="result-opponent"
-                  name="opponent"
-                  value={formData.opponent}
+                  name="opponent_team_id"
+                  value={formData.opponent_team_id}
                   onChange={handleChange}
-                  placeholder="e.g. Murai FC"
-                  maxLength={120}
                   required
-                />
+                >
+                  <option value="">Choose a saved team</option>
+                  {teams.map((team) => <option value={team.id} key={team.id}>{team.name}</option>)}
+                </select>
+                {teams.length === 0 && <small>Add the opponent teams first in League Table admin.</small>}
               </div>
 
               <div className="admin-form-group">
@@ -433,9 +455,9 @@ function AdminResults() {
                     </span>
 
                     <div className="admin-result-scoreline">
-                      <span>{result.home ? "STAREHE FC" : result.opponent}</span>
+                      <span className="admin-team-inline">{result.home ? <ClubBadge name="Starehe FC" size="small" /> : <ClubBadge src={result.opponentLogoUrl} name={result.opponent} size="small" />}{result.home ? "STAREHE FC" : result.opponent}</span>
                       <strong>{leftScore} - {rightScore}</strong>
-                      <span>{result.home ? result.opponent : "STAREHE FC"}</span>
+                      <span className="admin-team-inline">{result.home ? <ClubBadge src={result.opponentLogoUrl} name={result.opponent} size="small" /> : <ClubBadge name="Starehe FC" size="small" />}{result.home ? result.opponent : "STAREHE FC"}</span>
                     </div>
 
                     <p>{result.venue}</p>

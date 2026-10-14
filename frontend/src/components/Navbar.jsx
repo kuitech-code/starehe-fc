@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import clubLogo from "../assets/starehe-fc-logo.png";
 
 function Navbar() {
@@ -34,33 +34,33 @@ function Navbar() {
 
           <nav className="navbar-links">
 
-            <Link to="/" onClick={closeMenu}>
+            <NavLink to="/" end onClick={closeMenu}>
               Home
-            </Link>
+            </NavLink>
 
-            <Link to="/fixtures" onClick={closeMenu}>
+            <NavLink to="/fixtures" onClick={closeMenu}>
               Fixtures
-            </Link>
+            </NavLink>
 
-            <Link to="/results" onClick={closeMenu}>
+            <NavLink to="/results" onClick={closeMenu}>
               Results
-            </Link>
+            </NavLink>
 
-            <Link to="/table" onClick={closeMenu}>
+            <NavLink to="/table" onClick={closeMenu}>
               Table
-            </Link>
+            </NavLink>
 
-            <Link to="/team" onClick={closeMenu}>
+            <NavLink to="/team" onClick={closeMenu}>
               Team
-            </Link>
+            </NavLink>
 
-            <Link to="/news" onClick={closeMenu}>
+            <NavLink to="/news" onClick={closeMenu}>
               News
-            </Link>
+            </NavLink>
 
-            <Link to="/about" onClick={closeMenu}>
+            <NavLink to="/about" onClick={closeMenu}>
               About
-            </Link>
+            </NavLink>
 
           </nav>
 

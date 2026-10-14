@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchApiList, formatDate, formatTime } from "../api";
+import ClubBadge from "./ClubBadge";
 
 function NextMatch() {
   const [fixture, setFixture] = useState(null);
@@ -49,7 +50,7 @@ function NextMatch() {
         ) : (
           <div className="match-card">
             <div className="match-team">
-              <div className="team-placeholder">S</div>
+              <ClubBadge name="Starehe FC" />
               <h3>Starehe FC</h3>
               <p>{fixture.is_home ? "Home" : "Away"}</p>
             </div>
@@ -70,9 +71,7 @@ function NextMatch() {
             </div>
 
             <div className="match-team">
-              <div className="team-placeholder opponent">
-                {fixture.opponent?.charAt(0) || "O"}
-              </div>
+              <ClubBadge src={fixture.opponent_logo_url} name={fixture.opponent} />
               <h3>{fixture.opponent}</h3>
               <p>{fixture.is_home ? "Away" : "Home"}</p>
             </div>

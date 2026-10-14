@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ClubBadge from "../components/ClubBadge";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/table/standings`;
@@ -33,7 +34,7 @@ function Table() {
         </div>
       </section>
 
-      <section className="table-page-content">
+      <section className="table-page-content faded-background">
         <div className="section-container">
           <div className="table-page-heading">
             <p className="section-eyebrow">CURRENT STANDINGS</p>
@@ -57,7 +58,7 @@ function Table() {
                     {teams.map((team, index) => (
                       <tr key={team.team} className={team.team.toLowerCase() === "starehe fc" ? "current-team" : ""}>
                         <td className="position">{index + 1}</td>
-                        <td className="table-team">{team.team}</td>
+                        <td className="table-team"><span className="table-team-label"><ClubBadge src={team.logo_url} name={team.team} size="small" />{team.team}</span></td>
                         <td>{team.played}</td><td>{team.won}</td><td>{team.drawn}</td><td>{team.lost}</td>
                         <td>{team.goals_for}</td><td>{team.goals_against}</td>
                         <td>{team.goal_difference > 0 ? `+${team.goal_difference}` : team.goal_difference}</td>

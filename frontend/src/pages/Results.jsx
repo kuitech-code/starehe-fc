@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchApiList, formatDate, resultLetter } from "../api";
+import ClubBadge from "../components/ClubBadge";
 
 function Results() {
   const [results, setResults] = useState([]);
@@ -35,7 +36,7 @@ function Results() {
         </div>
       </section>
 
-      <section className="results-page-content">
+      <section className="results-page-content faded-background">
         <div className="section-container">
           <div className="results-page-heading">
             <p className="section-eyebrow">MATCH RESULTS</p>
@@ -65,7 +66,7 @@ function Results() {
 
                     <div className="result-full-match">
                       <div className="result-full-team">
-                        <div className="full-team-placeholder">S</div>
+                        <ClubBadge name="Starehe FC" />
                         <strong>Starehe FC</strong>
                       </div>
 
@@ -81,9 +82,7 @@ function Results() {
                       </div>
 
                       <div className="result-full-team">
-                        <div className="full-team-placeholder opponent">
-                          {match.opponent?.charAt(0) || "O"}
-                        </div>
+                        <ClubBadge src={match.opponent_logo_url} name={match.opponent} />
                         <strong>{match.opponent}</strong>
                       </div>
                     </div>

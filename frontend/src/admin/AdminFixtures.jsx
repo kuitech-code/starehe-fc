@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import ClubBadge from "../components/ClubBadge";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
   .replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/fixtures`;
+const TEAMS_API_URL = `${API_ORIGIN}/api/table/teams`;
 
 const emptyForm = {
   date: "",
   time: "",
-  opponent: "",
+  opponent_team_id: "",
   venue: "",
   competition: "League Match",
   home: true,
@@ -41,13 +43,29 @@ async function requestFixtures(path = "", options = {}) {
   return data;
 }
 
+async function requestTeams() {
+  let response;
+  try {
+    response = await fetch(TEAMS_API_URL);
+  } catch {
+    throw new Error("Could not load the saved league teams.");
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Could not load the saved league teams.");
+  if (!Array.isArray(data)) throw new Error("The teams API returned an unexpected response.");
+  return data;
+}
+
 function fromApi(fixture) {
   return {
     id: fixture.id,
+    opponent_team_id: String(fixture.opponent_team_id || ""),
     date: fixture.match_date
       ? String(fixture.match_date).slice(0, 10)
-      : "",    time: fixture.kickoff_time ? fixture.kickoff_time.slice(0, 5) : "",
+      : "",
+    time: fixture.kickoff_time ? fixture.kickoff_time.slice(0, 5) : "",
     opponent: fixture.opponent,
+    opponentLogoUrl: fixture.opponent_logo_url || "",
     venue: fixture.venue || "",
     competition: fixture.competition || "League Match",
     home: fixture.is_home,
@@ -57,6 +75,7 @@ function fromApi(fixture) {
 
 function AdminFixtures() {
   const [fixtures, setFixtures] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -68,12 +87,15 @@ function AdminFixtures() {
   useEffect(() => {
     let cancelled = false;
 
-    requestFixtures()
-      .then((data) => {
+    Promise.all([requestFixtures(), requestTeams()])
+      .then(([data, teamData]) => {
         if (!Array.isArray(data)) {
           throw new Error("The fixtures API returned an unexpected response.");
         }
-        if (!cancelled) setFixtures(data.map(fromApi));
+        if (!cancelled) {
+          setTeams(teamData.filter((team) => team.name.trim().toLowerCase() !== "starehe fc"));
+          setFixtures(data.map(fromApi));
+        }
       })
       .catch((err) => {
         if (!cancelled) setPageError(err.message);
@@ -115,16 +137,15 @@ function AdminFixtures() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const opponent = formData.opponent.trim();
     const venue = formData.venue.trim();
 
-    if (!opponent || !formData.date || !venue) {
-      setError("Please enter the date, opponent, and venue.");
+    if (!formData.opponent_team_id || !formData.date || !venue) {
+      setError("Please choose a saved team and enter the date and venue.");
       return;
     }
 
     const payload = {
-      opponent,
+      opponent_team_id: Number(formData.opponent_team_id),
       match_date: formData.date,
       kickoff_time: formData.time || null,
       venue,
@@ -168,7 +189,7 @@ function AdminFixtures() {
     setFormData({
       date: fixture.date,
       time: fixture.time,
-      opponent: fixture.opponent,
+      opponent_team_id: String(fixture.opponent_team_id || ""),
       venue: fixture.venue,
       competition: fixture.competition,
       home: fixture.home,
@@ -270,17 +291,18 @@ function AdminFixtures() {
               </div>
 
               <div className="admin-form-group">
-                <label htmlFor="fixture-opponent">Opponent</label>
-                <input
+                <label htmlFor="fixture-opponent">Opponent team</label>
+                <select
                   id="fixture-opponent"
-                  name="opponent"
-                  type="text"
-                  placeholder="e.g. Murai FC"
-                  value={formData.opponent}
+                  name="opponent_team_id"
+                  value={formData.opponent_team_id}
                   onChange={handleChange}
-                  maxLength={120}
                   required
-                />
+                >
+                  <option value="">Choose a saved team</option>
+                  {teams.map((team) => <option value={team.id} key={team.id}>{team.name}</option>)}
+                </select>
+                {teams.length === 0 && <small>Add the opponent teams first in League Table admin.</small>}
               </div>
 
               <div className="admin-form-group">
@@ -386,9 +408,9 @@ function AdminFixtures() {
 
                 <div className="admin-fixture-match">
                   <div>
-                    <span>STAREHE FC</span>
+                    <span className="admin-team-inline"><ClubBadge name="Starehe FC" size="small" />STAREHE FC</span>
                     <strong>VS</strong>
-                    <span>{fixture.opponent}</span>
+                    <span className="admin-team-inline"><ClubBadge src={fixture.opponentLogoUrl} name={fixture.opponent} size="small" />{fixture.opponent}</span>
                   </div>
 
                   <p>

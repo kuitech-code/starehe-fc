@@ -13,10 +13,8 @@ function validDate(value) {
 function validateResult(body) {
   const errors = [];
 
-  if (typeof body.opponent !== "string" || !body.opponent.trim()) {
-    errors.push("opponent is required and must be a non-empty string");
-  } else if (body.opponent.trim().length > 120) {
-    errors.push("opponent must be 120 characters or fewer");
+  if (!/^\d+$/.test(String(body.opponent_team_id ?? "")) || Number(body.opponent_team_id) < 1) {
+    errors.push("Choose a registered opponent team");
   }
 
   if (!validDate(body.match_date)) {
@@ -58,13 +56,15 @@ function serializeResult(row) {
   return {
     id: row.id,
     fixture_id: row.fixture_id,
-    opponent: row.opponent,
+    opponent_team_id: row.opponent_team_id,
+    opponent: row.opponent_team_name || row.opponent,
     match_date: row.match_date,
     starehe_score: row.is_home ? row.home_score : row.away_score,
     opponent_score: row.is_home ? row.away_score : row.home_score,
     venue: row.venue,
     competition: row.competition,
     is_home: row.is_home,
+    opponent_logo_url: row.opponent_logo_url || null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -87,7 +87,9 @@ function validId(id) {
 router.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM results ORDER BY match_date DESC, id DESC"
+      "SELECT results.*, league_teams.name AS opponent_team_name, league_teams.logo_url AS opponent_logo_url FROM results " +
+      "JOIN league_teams ON league_teams.id = results.opponent_team_id " +
+      "ORDER BY results.match_date DESC, results.id DESC"
     );
     res.json(rows.map(serializeResult));
   } catch (error) {
@@ -100,7 +102,11 @@ router.get("/:id", async (req, res, next) => {
     return res.status(400).json({ error: "id must be a positive integer" });
   }
   try {
-    const { rows } = await pool.query("SELECT * FROM results WHERE id = $1", [req.params.id]);
+    const { rows } = await pool.query(
+      "SELECT results.*, league_teams.name AS opponent_team_name, league_teams.logo_url AS opponent_logo_url FROM results " +
+      "JOIN league_teams ON league_teams.id = results.opponent_team_id WHERE results.id = $1",
+      [req.params.id],
+    );
     if (!rows.length) return res.status(404).json({ error: "Result not found" });
     res.json(serializeResult(rows[0]));
   } catch (error) {
@@ -120,12 +126,18 @@ router.post("/", async (req, res, next) => {
 
   const [homeScore, awayScore] = scoreColumns(req.body);
   try {
+    const { rows: teamRows } = await pool.query(
+      "SELECT id, name, logo_url FROM league_teams WHERE id = $1",
+      [req.body.opponent_team_id],
+    );
+    if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
     const { rows } = await pool.query(
       "INSERT INTO results " +
-        "(opponent, match_date, home_score, away_score, venue, competition, is_home) " +
-        "VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+        "(opponent_team_id, opponent, match_date, home_score, away_score, venue, competition, is_home) " +
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
       [
-        req.body.opponent.trim(),
+        teamRows[0].id,
+        teamRows[0].name,
         req.body.match_date,
         homeScore,
         awayScore,
@@ -134,7 +146,7 @@ router.post("/", async (req, res, next) => {
         req.body.is_home,
       ],
     );
-    res.status(201).json(serializeResult(rows[0]));
+    res.status(201).json(serializeResult({ ...rows[0], opponent_logo_url: teamRows[0].logo_url }));
   } catch (error) {
     handleDatabaseError(error, res, next);
   }
@@ -155,12 +167,18 @@ router.put("/:id", async (req, res, next) => {
 
   const [homeScore, awayScore] = scoreColumns(req.body);
   try {
+    const { rows: teamRows } = await pool.query(
+      "SELECT id, name, logo_url FROM league_teams WHERE id = $1",
+      [req.body.opponent_team_id],
+    );
+    if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
     const { rows } = await pool.query(
-      "UPDATE results SET opponent = $1, match_date = $2, home_score = $3, " +
-        "away_score = $4, venue = $5, competition = $6, is_home = $7, " +
-        "updated_at = NOW() WHERE id = $8 RETURNING *",
+      "UPDATE results SET opponent_team_id = $1, opponent = $2, match_date = $3, home_score = $4, " +
+        "away_score = $5, venue = $6, competition = $7, is_home = $8, " +
+        "updated_at = NOW() WHERE id = $9 RETURNING *",
       [
-        req.body.opponent.trim(),
+        teamRows[0].id,
+        teamRows[0].name,
         req.body.match_date,
         homeScore,
         awayScore,
@@ -171,7 +189,7 @@ router.put("/:id", async (req, res, next) => {
       ],
     );
     if (!rows.length) return res.status(404).json({ error: "Result not found" });
-    res.json(serializeResult(rows[0]));
+    res.json(serializeResult({ ...rows[0], opponent_logo_url: teamRows[0].logo_url }));
   } catch (error) {
     handleDatabaseError(error, res, next);
   }

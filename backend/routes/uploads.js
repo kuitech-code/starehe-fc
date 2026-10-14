@@ -41,4 +41,17 @@ router.post("/player-photo", upload.single("image"), async (req, res, next) => {
   }
 });
 
+router.post("/team-logo", upload.single("image"), async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "Choose a team badge image to upload." });
+  }
+
+  try {
+    const imageUrl = await uploadImage(req.file, "teams");
+    res.status(201).json({ imageUrl });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchApiList, formatDate, resultLetter } from "../api";
+import ClubBadge from "./ClubBadge";
 
 function LatestResults() {
   const [results, setResults] = useState([]);
@@ -58,9 +59,9 @@ function LatestResults() {
                   </div>
 
                   <div className="result-opponent">
-                    <span>Starehe FC</span>
+                    <span className="result-club"><ClubBadge name="Starehe FC" size="small" />Starehe FC</span>
                     <strong>vs</strong>
-                    <span>{match.opponent}</span>
+                    <span className="result-club"><ClubBadge src={match.opponent_logo_url} name={match.opponent} size="small" />{match.opponent}</span>
                   </div>
 
                   <div className="result-score">

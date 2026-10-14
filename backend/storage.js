@@ -42,7 +42,7 @@ async function uploadImage(file, folder) {
     throw new Error("Choose a JPG, PNG, WebP, or GIF image.");
   }
 
-  if (!["players", "news"].includes(folder)) {
+  if (!["players", "news", "teams"].includes(folder)) {
     throw new Error("Invalid image folder.");
   }
 

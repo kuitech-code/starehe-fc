@@ -22,7 +22,7 @@ function SupporterSpotlight() {
             >
               Discover their community impact
             </a>
-            <Link className="supporter-cta" to="/contact">
+            <Link className="supporter-cta" to="/contact#donation">
               Want to support us?
             </Link>
           </div>

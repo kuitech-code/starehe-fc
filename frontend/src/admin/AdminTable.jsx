@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import ClubBadge from "../components/ClubBadge";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/table`;
+const TEAM_UPLOAD_URL = `${API_ORIGIN}/api/uploads/team-logo`;
 
 const emptyMatch = () => ({
   home_team_id: "",
@@ -43,6 +45,7 @@ function formatDate(value) {
 function AdminTable() {
   const [table, setTable] = useState({ standings: [], teams: [], matches: [] });
   const [teamName, setTeamName] = useState("");
+  const [teamLogoFile, setTeamLogoFile] = useState(null);
   const [matchForm, setMatchForm] = useState(emptyMatch());
   const [editingMatchId, setEditingMatchId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,12 +93,50 @@ function AdminTable() {
     setTeamError("");
     setPageError("");
     try {
-      await requestTable("/teams", { method: "POST", body: JSON.stringify({ name }) });
+      let logo_url = null;
+      if (teamLogoFile) {
+        const body = new FormData();
+        body.append("image", teamLogoFile);
+        const response = await fetch(TEAM_UPLOAD_URL, { method: "POST", body });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "The badge upload failed.");
+        logo_url = data.imageUrl;
+      }
+      await requestTable("/teams", { method: "POST", body: JSON.stringify({ name, logo_url }) });
       setTeamName("");
+      setTeamLogoFile(null);
+      const logoInput = document.getElementById("league-team-logo");
+      if (logoInput) logoInput.value = "";
       setTeamError("");
       await loadTable();
     } catch (err) {
       setTeamError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeTeamBadge(team, file) {
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      setPageError("Choose a small badge image under 1 MB.");
+      return;
+    }
+    setSaving(true);
+    setPageError("");
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const response = await fetch(TEAM_UPLOAD_URL, { method: "POST", body });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "The badge upload failed.");
+      await requestTable(`/teams/${team.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ logo_url: data.imageUrl }),
+      });
+      await loadTable();
+    } catch (err) {
+      setPageError(err.message);
     } finally {
       setSaving(false);
     }
@@ -188,6 +229,21 @@ function AdminTable() {
               <label htmlFor="league-team-name">Team name</label>
               <input id="league-team-name" value={teamName} onChange={(event) => { setTeamName(event.target.value); setTeamError(""); }} maxLength={120} placeholder="e.g. Karatina FC" required />
             </div>
+            <div className="admin-form-group">
+              <label htmlFor="league-team-logo">Team badge (optional)</label>
+              <input id="league-team-logo" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => {
+                const file = event.target.files?.[0] || null;
+                if (file && file.size > 1024 * 1024) {
+                  setTeamError("Choose a small badge image under 1 MB.");
+                  event.target.value = "";
+                  setTeamLogoFile(null);
+                  return;
+                }
+                setTeamLogoFile(file);
+                setTeamError("");
+              }} />
+              <small>Choose the small club icon (PNG, JPG, or WebP; 1 MB max). A default badge is used if you leave this blank.</small>
+            </div>
           </div>
           {teamError && <p className="admin-form-error" role="alert">{teamError}</p>}
           <div className="admin-form-actions">
@@ -198,7 +254,15 @@ function AdminTable() {
           <div className="admin-fixture-list">
             {table.teams.map((team) => (
               <div className="admin-fixture-card" key={team.id}>
-                <strong>{team.name}</strong>
+                <div className="admin-team-name"><ClubBadge src={team.logo_url} name={team.name} size="small" /><strong>{team.name}</strong></div>
+                <label className="admin-edit-button admin-team-badge-button">
+                  {team.logo_url || team.name.trim().toLowerCase() === "starehe fc" ? "Change badge" : "Add badge"}
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={saving} onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) changeTeamBadge(team, file);
+                    event.target.value = "";
+                  }} />
+                </label>
                 {team.name.trim().toLowerCase() !== "starehe fc" && (
                   <button type="button" className="admin-delete-button" onClick={() => deleteTeam(team)}>Remove</button>
                 )}
@@ -269,7 +333,7 @@ function AdminTable() {
               <tbody>
                 {table.standings.map((team, index) => (
                   <tr key={team.team} className={team.team.toLowerCase() === "starehe fc" ? "current-team" : ""}>
-                    <td className="position">{index + 1}</td><td className="table-team">{team.team}</td>
+                    <td className="position">{index + 1}</td><td className="table-team"><span className="table-team-label"><ClubBadge src={team.logo_url} name={team.team} size="small" />{team.team}</span></td>
                     <td>{team.played}</td><td>{team.won}</td><td>{team.drawn}</td><td>{team.lost}</td>
                     <td>{team.goals_for}</td><td>{team.goals_against}</td>
                     <td>{team.goal_difference > 0 ? `+${team.goal_difference}` : team.goal_difference}</td>

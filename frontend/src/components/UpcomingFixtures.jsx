@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchApiList, formatDate, formatTime } from "../api";
+import ClubBadge from "./ClubBadge";
 
 function UpcomingFixtures() {
   const [fixtures, setFixtures] = useState([]);
@@ -64,16 +65,14 @@ function UpcomingFixtures() {
 
                 <div className="fixture-match">
                   <div className="fixture-team">
-                    <div className="small-team-placeholder">S</div>
+                    <ClubBadge name="Starehe FC" size="small" />
                     <strong>Starehe FC</strong>
                   </div>
 
                   <span className="fixture-vs">VS</span>
 
                   <div className="fixture-team">
-                    <div className="small-team-placeholder opponent">
-                      {fixture.opponent?.charAt(0) || "O"}
-                    </div>
+                    <ClubBadge src={fixture.opponent_logo_url} name={fixture.opponent} size="small" />
                     <strong>{fixture.opponent}</strong>
                   </div>
                 </div>

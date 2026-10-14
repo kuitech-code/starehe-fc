@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchApiList, formatDate, formatTime } from "../api";
+import ClubBadge from "../components/ClubBadge";
 
 function Fixtures() {
   const [fixtures, setFixtures] = useState([]);
@@ -41,7 +42,7 @@ function Fixtures() {
         </div>
       </section>
 
-      <section className="fixtures-page-content">
+      <section className="fixtures-page-content faded-background">
         <div className="section-container">
           <div className="fixtures-page-heading">
             <div>
@@ -70,7 +71,7 @@ function Fixtures() {
 
                   <div className="fixture-full-match">
                     <div className="fixture-full-team">
-                      <div className="full-team-placeholder">S</div>
+                      <ClubBadge name="Starehe FC" />
                       <strong>Starehe FC</strong>
                       <span>{fixture.is_home ? "HOME" : "AWAY"}</span>
                     </div>
@@ -86,9 +87,7 @@ function Fixtures() {
                     </div>
 
                     <div className="fixture-full-team">
-                      <div className="full-team-placeholder opponent">
-                        {fixture.opponent?.charAt(0) || "O"}
-                      </div>
+                      <ClubBadge src={fixture.opponent_logo_url} name={fixture.opponent} />
                       <strong>{fixture.opponent}</strong>
                       <span>{fixture.is_home ? "AWAY" : "HOME"}</span>
                     </div>

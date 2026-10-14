@@ -3,7 +3,7 @@ const pool = require("../db");
 
 const router = express.Router();
 const allowedFields = [
-  "opponent",
+  "opponent_team_id",
   "match_date",
   "kickoff_time",
   "venue",
@@ -34,12 +34,8 @@ function validTime(value) {
 function validateFixture(body, { partial = false } = {}) {
   const errors = [];
 
-  if (!partial || Object.hasOwn(body, "opponent")) {
-    if (typeof body.opponent !== "string" || !body.opponent.trim()) {
-      errors.push("opponent is required and must be a non-empty string");
-    } else if (body.opponent.trim().length > 120) {
-      errors.push("opponent must be 120 characters or fewer");
-    }
+  if (!/^\d+$/.test(String(body.opponent_team_id ?? "")) || Number(body.opponent_team_id) < 1) {
+    errors.push("Choose a registered opponent team");
   }
 
   if (!partial || Object.hasOwn(body, "match_date")) {
@@ -78,8 +74,7 @@ function fixtureValues(body) {
   for (const field of allowedFields) {
     if (!Object.hasOwn(body, field)) continue;
     const value = body[field];
-    if (field === "opponent") values[field] = value.trim();
-    else if (field === "kickoff_time" && value === "") values[field] = null;
+    if (field === "kickoff_time" && value === "") values[field] = null;
     else if ((field === "venue" || field === "competition") && value === "") values[field] = null;
     else values[field] = value;
   }
@@ -87,7 +82,7 @@ function fixtureValues(body) {
 }
 
 function handleDatabaseError(error, res, next) {
-  if (["22007", "22008", "22P02", "23514", "23502"].includes(error.code)) {
+  if (["22007", "22008", "22P02", "23514", "23502", "23503"].includes(error.code)) {
     return res.status(400).json({ error: "Invalid fixture data" });
   }
   return next(error);
@@ -100,9 +95,11 @@ function validId(id) {
 router.get("/", async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      "SELECT * FROM fixtures ORDER BY match_date, kickoff_time NULLS LAST, id"
+      "SELECT fixtures.*, league_teams.name AS opponent_team_name, league_teams.logo_url AS opponent_logo_url FROM fixtures " +
+      "JOIN league_teams ON league_teams.id = fixtures.opponent_team_id " +
+      "ORDER BY fixtures.match_date, fixtures.kickoff_time NULLS LAST, fixtures.id"
     );
-    res.json(rows);
+    res.json(rows.map((row) => ({ ...row, opponent: row.opponent_team_name })));
   } catch (error) {
     next(error);
   }
@@ -111,9 +108,13 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: "id must be a positive integer" });
   try {
-    const { rows } = await pool.query("SELECT * FROM fixtures WHERE id = $1", [req.params.id]);
+    const { rows } = await pool.query(
+      "SELECT fixtures.*, league_teams.name AS opponent_team_name, league_teams.logo_url AS opponent_logo_url FROM fixtures " +
+      "JOIN league_teams ON league_teams.id = fixtures.opponent_team_id WHERE fixtures.id = $1",
+      [req.params.id],
+    );
     if (!rows.length) return res.status(404).json({ error: "Fixture not found" });
-    res.json(rows[0]);
+    res.json({ ...rows[0], opponent: rows[0].opponent_team_name });
   } catch (error) {
     next(error);
   }
@@ -126,14 +127,20 @@ router.post("/", async (req, res, next) => {
   const errors = validateFixture(req.body);
   if (errors.length) return res.status(400).json({ error: "Validation failed", details: errors });
 
-  const values = fixtureValues(req.body);
-  const columns = Object.keys(values);
   try {
+    const { rows: teamRows } = await pool.query(
+      "SELECT id, name, logo_url FROM league_teams WHERE id = $1",
+      [req.body.opponent_team_id],
+    );
+    if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
+    const values = fixtureValues(req.body);
+    values.opponent = teamRows[0].name;
+    const columns = Object.keys(values);
     const { rows } = await pool.query(
       `INSERT INTO fixtures (${columns.join(", ")}) VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING *`,
       Object.values(values),
     );
-    res.status(201).json(rows[0]);
+    res.status(201).json({ ...rows[0], opponent: teamRows[0].name, opponent_logo_url: teamRows[0].logo_url });
   } catch (error) {
     handleDatabaseError(error, res, next);
   }
@@ -147,19 +154,24 @@ router.put("/:id", async (req, res, next) => {
   const errors = validateFixture(req.body, { partial: true });
   if (errors.length) return res.status(400).json({ error: "Validation failed", details: errors });
 
-  const values = fixtureValues(req.body);
-  const columns = Object.keys(values);
-  if (!columns.length) return res.status(400).json({ error: "Provide at least one fixture field to update" });
-
-  const assignments = columns.map((field, i) => `${field} = $${i + 1}`);
-  assignments.push("updated_at = NOW()");
   try {
+    const { rows: teamRows } = await pool.query(
+      "SELECT id, name, logo_url FROM league_teams WHERE id = $1",
+      [req.body.opponent_team_id],
+    );
+    if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
+    const values = fixtureValues(req.body);
+    values.opponent = teamRows[0].name;
+    const columns = Object.keys(values);
+    if (!columns.length) return res.status(400).json({ error: "Provide at least one fixture field to update" });
+    const assignments = columns.map((field, i) => `${field} = $${i + 1}`);
+    assignments.push("updated_at = NOW()");
     const { rows } = await pool.query(
       `UPDATE fixtures SET ${assignments.join(", ")} WHERE id = $${columns.length + 1} RETURNING *`,
       [...Object.values(values), req.params.id],
     );
     if (!rows.length) return res.status(404).json({ error: "Fixture not found" });
-    res.json(rows[0]);
+    res.json({ ...rows[0], opponent: teamRows[0].name, opponent_logo_url: teamRows[0].logo_url });
   } catch (error) {
     handleDatabaseError(error, res, next);
   }

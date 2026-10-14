@@ -30,7 +30,7 @@ function validateMatch(body) {
 
 async function getStandings() {
   const [teamsResult, matchesResult, stareheResults] = await Promise.all([
-    pool.query("SELECT id, name FROM league_teams ORDER BY name"),
+    pool.query("SELECT id, name, logo_url FROM league_teams ORDER BY name"),
     pool.query(
       "SELECT m.id, m.home_team_id, m.away_team_id, home.name AS home_team, away.name AS away_team, " +
       "m.match_date, m.home_score, m.away_score FROM league_matches m " +
@@ -66,8 +66,10 @@ async function getStandings() {
 
   const stats = new Map();
   for (const [key, name] of teamNames) {
+    const registeredTeam = teamsResult.rows.find((team) => team.name.trim().toLowerCase() === key);
     stats.set(key, {
       team: name,
+      logo_url: registeredTeam?.logo_url || null,
       played: 0,
       won: 0,
       drawn: 0,
@@ -135,17 +137,46 @@ router.get("/standings", async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.get("/teams", async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, name, logo_url FROM league_teams ORDER BY LOWER(name), name",
+    );
+    res.json(rows);
+  } catch (error) { next(error); }
+});
+
 router.post("/teams", async (req, res, next) => {
   if (typeof req.body?.name !== "string" || !req.body.name.trim() || req.body.name.trim().length > 120) {
     return res.status(400).json({ error: "Team name is required and must be 120 characters or fewer" });
   }
+  const logoUrl = req.body.logo_url ?? null;
+  if (logoUrl !== null && (typeof logoUrl !== "string" || logoUrl.length > 2048 || !/^https:\/\//i.test(logoUrl))) {
+    return res.status(400).json({ error: "logo_url must be a secure image URL or null" });
+  }
   try {
-    const { rows } = await pool.query("INSERT INTO league_teams (name) VALUES ($1) RETURNING id, name", [req.body.name.trim()]);
+    const { rows } = await pool.query("INSERT INTO league_teams (name, logo_url) VALUES ($1, $2) RETURNING id, name, logo_url", [req.body.name.trim(), logoUrl]);
     res.status(201).json(rows[0]);
   } catch (error) {
     if (error.code === "23505") return res.status(409).json({ error: "That team is already on the league table" });
     next(error);
   }
+});
+
+router.put("/teams/:id", async (req, res, next) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: "id must be a positive integer" });
+  const logoUrl = req.body?.logo_url ?? null;
+  if (logoUrl !== null && (typeof logoUrl !== "string" || logoUrl.length > 2048 || !/^https:\/\//i.test(logoUrl))) {
+    return res.status(400).json({ error: "logo_url must be a secure image URL or null" });
+  }
+  try {
+    const { rows } = await pool.query(
+      "UPDATE league_teams SET logo_url = $1 WHERE id = $2 RETURNING id, name, logo_url",
+      [logoUrl, req.params.id],
+    );
+    if (!rows.length) return res.status(404).json({ error: "Team not found" });
+    res.json(rows[0]);
+  } catch (error) { next(error); }
 });
 
 router.delete("/teams/:id", async (req, res, next) => {
@@ -155,6 +186,8 @@ router.delete("/teams/:id", async (req, res, next) => {
       "DELETE FROM league_teams team WHERE team.id = $1 " +
       "AND LOWER(team.name) <> 'starehe fc' " +
       "AND NOT EXISTS (SELECT 1 FROM league_matches lm WHERE lm.home_team_id = team.id OR lm.away_team_id = team.id) " +
+      "AND NOT EXISTS (SELECT 1 FROM fixtures fixture WHERE fixture.opponent_team_id = team.id) " +
+      "AND NOT EXISTS (SELECT 1 FROM results linked_result WHERE linked_result.opponent_team_id = team.id) " +
       "AND NOT EXISTS (SELECT 1 FROM results result WHERE LOWER(result.opponent) = LOWER(team.name)) " +
       "RETURNING id",
       [req.params.id],

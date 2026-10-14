@@ -42,8 +42,10 @@ app.use("/api/news", (req, res, next) => {
 app.use("/api/table", (req, res, next) => {
   const isPublicStandings =
     req.method === "GET" && req.path.replace(/\/+$/, "") === "/standings";
+  const isPublicTeamList =
+    req.method === "GET" && req.path.replace(/\/+$/, "") === "/teams";
 
-  if (isPublicStandings) return next();
+  if (isPublicStandings || isPublicTeamList) return next();
   return adminAuth.requireAdminSession(req, res, next);
 }, tableRouter);
 
