@@ -1,3 +1,5 @@
+import SupportUs from "../components/SupportUs";
+
 function Contact() {
   return (
     <main className="contact-page">
@@ -20,6 +22,8 @@ function Contact() {
         </div>
       </section>
 
+
+      <SupportUs />
 
       <section className="contact-content">
 
@@ -48,7 +52,7 @@ function Contact() {
               </p>
 
 
-              <div className="contact-details">
+              <div className="contact-details" id="club-contact-details">
 
                 <div className="contact-detail">
                   <span>PHONE</span>
@@ -153,7 +157,7 @@ function Contact() {
                   type="submit"
                   className="contact-submit"
                 >
-                  Send Message →
+                  Send Message â†’
                 </button>
 
               </form>

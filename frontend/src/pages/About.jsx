@@ -1,3 +1,5 @@
+import clubCrest from "../assets/y.jpg";
+
 function About() {
   const values = [
     {
@@ -104,26 +106,38 @@ function About() {
 
         <div className="section-container">
 
-          <div className="about-identity-content">
+          <div className="about-identity-grid">
+            <div className="about-identity-content">
+              <p className="section-eyebrow">OUR IDENTITY</p>
 
-            <p className="section-eyebrow">
-              OUR IDENTITY
-            </p>
+              <h2>
+                One club.
+                <br />
+                One family.
+                <br />
+                One dream.
+              </h2>
 
-            <h2>
-              One club.
-              <br />
-              One family.
-              <br />
-              One dream.
-            </h2>
+              <p>
+                Every player, coach, supporter and member of the Starehe FC family
+                contributes to something bigger than themselves. Together, we
+                represent our community with passion, grow through discipline and
+                work toward a future we can all be proud of.
+              </p>
+            </div>
 
-            <p>
-              Every player, coach, supporter and member
-              of the Starehe FC family contributes to
-              something bigger than themselves.
-            </p>
-
+            <div className="identity-art">
+              <img
+                src={clubCrest}
+                alt="Starehe Football Club crest"
+                loading="lazy"
+              />
+              <div className="identity-motto" aria-label="Pride, unity, victory">
+                <span>PRIDE</span>
+                <span>UNITY</span>
+                <span>VICTORY</span>
+              </div>
+            </div>
           </div>
 
         </div>

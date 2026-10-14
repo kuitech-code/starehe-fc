@@ -56,11 +56,13 @@ function Footer() {
       <div className="footer-bottom">
         <div className="footer-container footer-bottom-inner">
           <p>
-            © 2026 Starehe FC. All rights reserved.
+            © {new Date().getFullYear()} Starehe FC. All rights reserved.
           </p>
 
           <p>
-            Built with passion for football.
+            <a href="https://wa.me/254741194959?text=Hello%20KuiTech%2C%20I%20would%20like%20to%20inquire%20about%20website%20development%20services." target="_blank" rel="noopener noreferrer" className="footer-link">
+               Built with passion by KuiTech
+            </a>
           </p>
         </div>
       </div>

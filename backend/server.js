@@ -13,11 +13,13 @@ const resultsRouter = require("./routes/results");
 const newsRouter = require("./routes/news");
 const tableRouter = require("./routes/table");
 const uploadsRouter = require("./routes/uploads");
+const donationsRouter = require("./routes/donations");
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/uploads", adminAuth.requireAdminSession, uploadsRouter);
+app.use("/api/donations", donationsRouter);
 
 app.use("/api/admin", adminAuth.router);
 
