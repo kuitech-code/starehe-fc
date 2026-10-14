@@ -162,7 +162,7 @@ function SupportUs() {
               <div className="donation-unavailable">
                 <p>
                   {configChecked
-                    ? "Online M-Pesa giving is being prepared. It will be enabled after the Daraja account is connected."
+                    ? "Will be available soon."
                     : "Checking payment availability..."}
                 </p>
                 <button type="button" className="donation-submit" onClick={goToContactDetails}>

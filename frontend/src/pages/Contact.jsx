@@ -172,7 +172,7 @@ function Contact() {
                   type="submit"
                   className="contact-submit"
                 >
-                  Send Message â†’
+                  Send Message
                 </button>
 
               </form>
