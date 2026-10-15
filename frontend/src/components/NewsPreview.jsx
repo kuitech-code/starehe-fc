@@ -60,7 +60,7 @@ function NewsPreview() {
                 <div className="news-content">
                   <p>{formatDate(article.published_at || article.updated_at)}</p>
                   <h3>{article.title}</h3>
-                  <Link to="/news" className="news-read-more">Read Story →</Link>
+                  <Link to={`/news/${article.id}`} className="news-read-more">Read Story →</Link>
                 </div>
               </article>
             ))}

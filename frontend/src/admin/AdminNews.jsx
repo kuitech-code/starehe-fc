@@ -7,10 +7,12 @@ const emptyForm = {
   title: "",
   category: "Club News",
   excerpt: "",
+  content: "",
   status: "Draft",
-  imageUrl: "",
-  imageFile: null,
-  removeImage: false,
+  images: [],
+  existingImages: [],
+  removeImageIds: [],
+  removeLegacyCover: false,
 };
 
 const categories = ["Club News", "Match Reports", "Team News", "Community", "Announcements"];
@@ -50,9 +52,13 @@ function fromApi(article) {
     title: article.title,
     category: article.category,
     excerpt: article.excerpt,
+    content: article.content || "",
     status: article.status,
     date: String(article.updated_at || article.published_at || article.created_at || "").slice(0, 10),
     imageUrl: article.image_url || "",
+    images: Array.isArray(article.images) && article.images.length
+      ? article.images
+      : article.image_url ? [{ id: null, image_url: article.image_url }] : [],
   };
 }
 
@@ -100,37 +106,41 @@ function AdminNews() {
     setForm({ ...emptyForm });
     setEditingId(null);
     setError("");
-    const input = document.getElementById("news-image");
+    const input = document.getElementById("news-images");
     if (input) input.value = "";
   }
 
   function handleImageChange(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file.");
+    const files = Array.from(event.target.files || []);
+    const keptExistingCount = form.existingImages.filter((image) => image.id === null
+      ? !form.removeLegacyCover
+      : !form.removeImageIds.includes(image.id)).length;
+    if (keptExistingCount + form.images.length + files.length > 10) {
+      setError("An article can have up to 10 photos.");
       event.target.value = "";
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Please choose an image smaller than 5 MB.");
+    const invalid = files.find((file) => !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) || file.size > 5 * 1024 * 1024);
+    if (invalid) {
+      setError(invalid.size > 5 * 1024 * 1024 ? "Each photo must be 5 MB or smaller." : "Choose JPG, PNG, WebP, or GIF photos.");
       event.target.value = "";
       return;
     }
-    setForm((current) => ({ ...current, imageFile: file, removeImage: false }));
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((current) => ({ ...current, imageUrl: String(reader.result || "") }));
-      setError("");
-    };
-    reader.onerror = () => setError("We couldn't read that image. Please try another.");
-    reader.readAsDataURL(file);
+    setForm((current) => ({ ...current, images: [...current.images, ...files] }));
+    setError("");
+    event.target.value = "";
   }
 
-  function removeImage() {
-    setForm((current) => ({ ...current, imageUrl: "", imageFile: null, removeImage: true }));
-    const input = document.getElementById("news-image");
-    if (input) input.value = "";
+  function removeExistingImage(image) {
+    if (image.id === null) {
+      setForm((current) => ({ ...current, removeLegacyCover: true }));
+    } else {
+      setForm((current) => ({ ...current, removeImageIds: [...current.removeImageIds, image.id] }));
+    }
+  }
+
+  function removeSelectedImage(index) {
+    setForm((current) => ({ ...current, images: current.images.filter((_, fileIndex) => fileIndex !== index) }));
   }
 
   function handleEdit(article) {
@@ -138,10 +148,12 @@ function AdminNews() {
       title: article.title,
       category: article.category,
       excerpt: article.excerpt,
+      content: article.content || "",
       status: article.status,
-      imageUrl: article.imageUrl || "",
-      imageFile: null,
-      removeImage: false,
+      images: [],
+      existingImages: article.images || (article.imageUrl ? [{ id: null, image_url: article.imageUrl }] : []),
+      removeImageIds: [],
+      removeLegacyCover: false,
     });
     setEditingId(article.id);
     setError("");
@@ -162,9 +174,13 @@ function AdminNews() {
     payload.append("title", title);
     payload.append("category", form.category);
     payload.append("excerpt", excerpt);
+    payload.append("content", form.content.trim());
     payload.append("status", form.status);
-    if (form.imageFile) payload.append("image", form.imageFile);
-    if (editingId !== null && form.removeImage) payload.append("remove_image", "true");
+    form.images.forEach((image) => payload.append("images", image));
+    if (editingId !== null) {
+      payload.append("remove_image_ids", JSON.stringify(form.removeImageIds));
+      if (form.removeLegacyCover) payload.append("remove_image", "true");
+    }
 
     setSaving(true);
     setError("");
@@ -251,14 +267,33 @@ function AdminNews() {
               <textarea id="news-excerpt" name="excerpt" value={form.excerpt} onChange={handleChange} placeholder="Give readers a short introduction to this story..." rows={4} maxLength={500} required />
               <small>{form.excerpt.length}/500 characters</small>
             </div>
+            <div className="admin-form-group admin-news-excerpt-field">
+              <label htmlFor="news-content">Full Story</label>
+              <textarea id="news-content" name="content" value={form.content} onChange={handleChange} placeholder="Write the full match report or club story here..." rows={8} />
+              <small>Optional. If left blank, readers will see the article summary.</small>
+            </div>
             <div className="admin-form-group admin-news-image-field">
-              <label htmlFor="news-image">Featured Image</label>
-              <input id="news-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
-              <small>Choose a JPG, PNG, WebP, or GIF image up to 5 MB.</small>
-              {form.imageUrl && (
-                <div className="admin-news-image-preview">
-                  <img src={imageSource(form.imageUrl)} alt="Featured image preview" />
-                  <button type="button" className="admin-delete-button" onClick={removeImage}>Remove Image</button>
+              <label htmlFor="news-images">Article Photos</label>
+              <input id="news-images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleImageChange} />
+              <small>Add up to 10 JPG, PNG, WebP, or GIF photos. Each photo can be up to 5 MB.</small>
+              {(form.existingImages.length > 0 || form.images.length > 0) && (
+                <div className="admin-news-gallery-preview">
+                  {form.existingImages.map((image) => {
+                    const removed = image.id === null ? form.removeLegacyCover : form.removeImageIds.includes(image.id);
+                    if (removed) return null;
+                    return (
+                      <div className="admin-news-gallery-item" key={image.id ?? image.image_url}>
+                        <img src={imageSource(image.image_url)} alt="Saved article photo" />
+                        <button type="button" className="admin-delete-button" onClick={() => removeExistingImage(image)}>Remove</button>
+                      </div>
+                    );
+                  })}
+                  {form.images.map((image, index) => (
+                    <div className="admin-news-gallery-item" key={`${image.name}-${image.lastModified}-${index}`}>
+                      <span className="admin-news-file-name">{image.name}</span>
+                      <button type="button" className="admin-delete-button" onClick={() => removeSelectedImage(index)}>Remove</button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

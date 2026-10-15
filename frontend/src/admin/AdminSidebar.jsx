@@ -74,6 +74,11 @@ function AdminSidebar({ menuOpen, closeMenu, onSignOut }) {
             Players
           </NavLink>
 
+          <NavLink to="/admin/top-scorers" onClick={handleLinkClick}>
+            <span>⚽</span>
+            Top Scorers
+          </NavLink>
+
           <NavLink
             to="/admin/news"
             onClick={handleLinkClick}

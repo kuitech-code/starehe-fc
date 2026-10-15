@@ -9,6 +9,7 @@ import Results from "./pages/Results";
 import Table from "./pages/Table";
 import Team from "./pages/Team";
 import News from "./pages/News";
+import NewsArticle from "./pages/NewsArticle";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
@@ -17,6 +18,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import AdminFixtures from "./admin/AdminFixtures";
 import AdminResults from "./admin/AdminResults";
 import AdminPlayers from "./admin/AdminPlayers";
+import AdminTopScorers from "./admin/AdminTopScorers";
 import AdminNews from "./admin/AdminNews";
 import AdminTable from "./admin/AdminTable";
 import AdminSettings from "./admin/AdminSettings";
@@ -33,6 +35,7 @@ function PublicLayout() {
         <Route path="/table" element={<Table />} />
         <Route path="/team" element={<Team />} />
         <Route path="/news" element={<News />} />
+        <Route path="/news/:id" element={<NewsArticle />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
@@ -53,6 +56,7 @@ function App() {
           <Route path="fixtures" element={<AdminFixtures />} />
           <Route path="results" element={<AdminResults />} />
           <Route path="players" element={<AdminPlayers />} />
+          <Route path="top-scorers" element={<AdminTopScorers />} />
           <Route path="news" element={<AdminNews />} />
           <Route path="table" element={<AdminTable />} />
           <Route path="settings" element={<AdminSettings />} />

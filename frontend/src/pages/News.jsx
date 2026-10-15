@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/news/published`;
@@ -65,24 +66,25 @@ function News() {
           ) : (
             <>
               <article className="featured-news-card">
-                <div className="featured-news-image">
+                <Link to={`/news/${featuredArticle.id}`} className="featured-news-image" aria-label={`Read ${featuredArticle.title}`}>
                   {featuredArticle.image_url ? (
                     <img src={imageSource(featuredArticle.image_url)} alt={featuredArticle.title} />
                   ) : (
                     <div className="news-photo-placeholder"><span>{featuredArticle.category}</span></div>
                   )}
-                </div>
+                </Link>
                 <div className="featured-news-content">
                   <span className="news-category">{featuredArticle.category}</span>
                   <p className="news-date">{formatDate(featuredArticle.published_at || featuredArticle.updated_at)}</p>
                   <h2>{featuredArticle.title}</h2>
                   <p className="news-excerpt">{featuredArticle.excerpt}</p>
+                  <Link className="news-button" to={`/news/${featuredArticle.id}`}>Read Story</Link>
                 </div>
               </article>
 
               <div className="news-page-grid">
                 {remainingArticles.map((article) => (
-                  <article className="full-news-card" key={article.id}>
+                  <Link className="full-news-card" key={article.id} to={`/news/${article.id}`}>
                     <div className="full-news-image">
                       {article.image_url ? (
                         <img src={imageSource(article.image_url)} alt={article.title} />
@@ -98,7 +100,7 @@ function News() {
                       <h3>{article.title}</h3>
                       <p>{article.excerpt}</p>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </>

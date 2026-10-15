@@ -14,6 +14,7 @@ const newsRouter = require("./routes/news");
 const tableRouter = require("./routes/table");
 const uploadsRouter = require("./routes/uploads");
 const donationsRouter = require("./routes/donations");
+const topScorersRouter = require("./routes/topScorers");
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -28,12 +29,20 @@ app.use("/api/players", adminAuth.requireAdminForWrites, playersRouter);
 app.use("/api/fixtures", adminAuth.requireAdminForWrites, fixturesRouter);
 app.use("/api/results", adminAuth.requireAdminForWrites, resultsRouter);
 
+// Top-scorer totals are public; admins maintain the list.
+app.use("/api/top-scorers", (req, res, next) => {
+  if (req.method === "GET") return next();
+  return adminAuth.requireAdminSession(req, res, next);
+}, topScorersRouter);
+
 // Published news stays public. Drafts and admin changes require sign-in.
 app.use("/api/news", (req, res, next) => {
   const isPublishedNews =
     req.method === "GET" && req.path.replace(/\/+$/, "") === "/published";
+  const isPublishedArticle =
+    req.method === "GET" && /^\/published\/\d+$/.test(req.path.replace(/\/+$/, ""));
 
-  if (isPublishedNews) return next();
+  if (isPublishedNews || isPublishedArticle) return next();
   return adminAuth.requireAdminSession(req, res, next);
 }, newsRouter);
 
@@ -80,7 +89,7 @@ app.use((err, req, res, next) => {
 
   if (err.code === "LIMIT_UNEXPECTED_FILE") {
     return res.status(400).json({
-      error: "Only one image can be uploaded per article.",
+      error: "An article can have up to 10 images.",
     });
   }
 

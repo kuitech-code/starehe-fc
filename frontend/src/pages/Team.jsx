@@ -7,6 +7,8 @@ function Team() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [topScorers, setTopScorers] = useState([]);
+  const [scorersLoading, setScorersLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +31,15 @@ function Team() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchApiList("/api/top-scorers", "top scorers")
+      .then((data) => { if (!cancelled) setTopScorers(data); })
+      .catch(() => { if (!cancelled) setTopScorers([]); })
+      .finally(() => { if (!cancelled) setScorersLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <main className="team-page">
       <section className="page-hero">
@@ -36,6 +47,18 @@ function Team() {
           <p className="section-eyebrow">STAREHE FC</p>
           <h1>The Team</h1>
           <p>Meet the players representing Starehe FC.</p>
+        </div>
+      </section>
+
+      <section className="top-scorers-section">
+        <div className="section-container">
+          <div className="top-scorers-heading">
+            <div><p className="section-eyebrow">NYANDARUA COUNTY LEAGUE</p><h2>Top Scorers</h2></div>
+            <a className="team-fkf-link" href="https://www.fkfleagues.co.ke/team/4221/Starehe-FC" target="_blank" rel="noreferrer">Official FKF team profile <span aria-hidden="true">↗</span></a>
+          </div>
+          {scorersLoading ? <p role="status">Loading top scorers...</p> : topScorers.length === 0 ? <p>Top scorer statistics will appear here when the club adds them.</p> : (
+            <ol className="top-scorers-list">{topScorers.map((scorer, index) => <li key={scorer.player_id}><span className="top-scorer-rank">{String(index + 1).padStart(2, "0")}</span><div><strong>{scorer.full_name}</strong><small>#{scorer.shirt_number}</small></div><strong className="top-scorer-goals">{scorer.goals}<small>{scorer.goals === 1 ? "GOAL" : "GOALS"}</small></strong></li>)}</ol>
+          )}
         </div>
       </section>
 

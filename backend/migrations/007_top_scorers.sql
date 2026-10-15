@@ -1,0 +1,9 @@
+BEGIN;
+
+CREATE TABLE top_scorers (
+    player_id BIGINT PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,
+    goals INTEGER NOT NULL CHECK (goals >= 0),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMIT;

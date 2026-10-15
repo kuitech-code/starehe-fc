@@ -1,8 +1,17 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import ClubBadge from "../components/ClubBadge";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/table/standings`;
+const fkfStandings = [
+  { team: "Ndaragwa Young Stars", played: 12, goalDifference: 25, points: 29 },
+  { team: "Starehe FC", played: 12, goalDifference: 6, points: 23 },
+  { team: "Ivory FC", played: 12, goalDifference: 14, points: 22 },
+  { team: "Muruai FC", played: 12, goalDifference: -4, points: 12 },
+  { team: "110 FC", played: 12, goalDifference: -4, points: 11 },
+  { team: "Sparrow FC", played: 12, goalDifference: -20, points: 11 },
+  { team: "Sparks United", played: 12, goalDifference: -17, points: 8 },
+];
 
 function Table() {
   const [teams, setTeams] = useState([]);
@@ -39,6 +48,7 @@ function Table() {
           <div className="table-page-heading">
             <p className="section-eyebrow">CURRENT STANDINGS</p>
             <h2>League Table</h2>
+            <p>Standings calculated from the league matches entered by the club.</p>
           </div>
 
           {loading ? (
@@ -74,6 +84,45 @@ function Table() {
               </div>
             </>
           )}
+
+          <section className="fkf-standings-section" aria-labelledby="fkf-standings-title">
+            <div className="fkf-standings-heading">
+              <div>
+                <p className="section-eyebrow">OFFICIAL FKF TABLE</p>
+                <h2 id="fkf-standings-title">Nyandarua County League 2025/2026 Zone C</h2>
+                <p>Official standings from FKF Leagues.</p>
+              </div>
+              <a
+                className="fkf-standings-button"
+                href="https://www.fkfleagues.co.ke/standings/nyandarua2526c"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open full table on FKF
+              </a>
+            </div>
+            <div className="table-wrapper fkf-table-wrapper">
+              <table className="league-table fkf-league-table">
+                <thead>
+                  <tr><th>POS</th><th>TEAM</th><th>P</th><th>GD</th><th>PTS</th></tr>
+                </thead>
+                <tbody>
+                  {fkfStandings.map((team, index) => (
+                    <tr key={team.team} className={team.team === "Starehe FC" ? "current-team" : ""}>
+                      <td className="position">{index + 1}</td>
+                      <td className="table-team">{team.team}</td>
+                      <td>{team.played}</td>
+                      <td>{team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}</td>
+                      <td className="points">{team.points}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="fkf-standings-note">
+              FKF standings snapshot. Use the button above to check the latest official table.
+            </p>
+          </section>
         </div>
       </section>
     </main>
