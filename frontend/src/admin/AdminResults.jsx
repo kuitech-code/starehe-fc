@@ -5,6 +5,8 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000")
   .replace(/\/+$/, "");
 const API_URL = `${API_ORIGIN}/api/results`;
 const TEAMS_API_URL = `${API_ORIGIN}/api/table/teams`;
+const RESULT_STATUSES = ["Normal", "Cancelled", "Postponed", "Home walkover", "Away walkover", "Home win penalties", "Away win penalties", "Abandoned", "Void"];
+const SCORE_REQUIRED_STATUSES = ["Normal", "Home win penalties", "Away win penalties"];
 
 const emptyForm = {
   date: "",
@@ -14,6 +16,7 @@ const emptyForm = {
   home: true,
   venue: "",
   competition: "League Match",
+  status: "Normal",
 };
 
 async function requestResults(path = "", options = {}) {
@@ -71,6 +74,7 @@ function fromApi(result) {
     home: result.is_home,
     venue: result.venue || "",
     competition: result.competition || "League Match",
+    status: result.status || "Normal",
   };
 }
 
@@ -84,6 +88,7 @@ function AdminResults() {
   const [formData, setFormData] = useState(emptyForm);
   const [error, setError] = useState("");
   const [pageError, setPageError] = useState("");
+  const requiresScore = SCORE_REQUIRED_STATUSES.includes(formData.status);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,6 +149,7 @@ function AdminResults() {
       home: result.home,
       venue: result.venue,
       competition: result.competition,
+      status: result.status || "Normal",
     });
     setEditingId(result.id);
     setError("");
@@ -163,7 +169,7 @@ function AdminResults() {
       return;
     }
 
-    if (
+    if (requiresScore && (
       formData.homeScore === "" ||
       formData.awayScore === "" ||
       !Number.isInteger(stareheScore) ||
@@ -172,7 +178,7 @@ function AdminResults() {
       opponentScore < 0 ||
       stareheScore > 32767 ||
       opponentScore > 32767
-    ) {
+    )) {
       setError("Scores must be whole numbers from 0 to 32767.");
       return;
     }
@@ -185,6 +191,7 @@ function AdminResults() {
       is_home: formData.home,
       venue,
       competition: formData.competition,
+      status: formData.status,
     };
 
     setSaving(true);
@@ -228,6 +235,9 @@ function AdminResults() {
   };
 
   const getOutcome = (result) => {
+    if (result.status === "Home walkover" || result.status === "Home win penalties") return result.home ? "W" : "L";
+    if (result.status === "Away walkover" || result.status === "Away win penalties") return result.home ? "L" : "W";
+    if (result.status !== "Normal") return null;
     if (result.homeScore > result.awayScore) return "W";
     if (result.homeScore < result.awayScore) return "L";
     return "D";
@@ -315,6 +325,13 @@ function AdminResults() {
               </div>
 
               <div className="admin-form-group">
+                <label htmlFor="result-status">Match status</label>
+                <select id="result-status" name="status" value={formData.status} onChange={handleChange}>
+                  {RESULT_STATUSES.map((status) => <option key={status}>{status}</option>)}
+                </select>
+              </div>
+
+              <div className="admin-form-group">
                 <label htmlFor="home-score">Starehe FC score</label>
                 <input
                   id="home-score"
@@ -325,7 +342,7 @@ function AdminResults() {
                   step="1"
                   value={formData.homeScore}
                   onChange={handleChange}
-                  required
+                  required={requiresScore}
                 />
               </div>
 
@@ -340,7 +357,7 @@ function AdminResults() {
                   step="1"
                   value={formData.awayScore}
                   onChange={handleChange}
-                  required
+                  required={requiresScore}
                 />
               </div>
 
@@ -439,6 +456,7 @@ function AdminResults() {
           <div className="admin-fixture-list">
             {results.map((result) => {
               const outcome = getOutcome(result);
+              const showScore = SCORE_REQUIRED_STATUSES.includes(result.status);
               const leftScore = result.home ? result.homeScore : result.awayScore;
               const rightScore = result.home ? result.awayScore : result.homeScore;
 
@@ -450,13 +468,13 @@ function AdminResults() {
                   </div>
 
                   <div className="admin-result-match">
-                    <span className={`admin-outcome outcome-${outcome.toLowerCase()}`}>
-                      {outcome === "W" ? "WIN" : outcome === "D" ? "DRAW" : "LOSS"}
+                    <span className={`admin-outcome ${outcome ? `outcome-${outcome.toLowerCase()}` : "outcome-neutral"}`}>
+                      {result.status}{outcome ? ` · ${outcome === "W" ? "WIN" : outcome === "D" ? "DRAW" : "LOSS"}` : ""}
                     </span>
 
                     <div className="admin-result-scoreline">
                       <span className="admin-team-inline">{result.home ? <ClubBadge name="Starehe FC" size="small" /> : <ClubBadge src={result.opponentLogoUrl} name={result.opponent} size="small" />}{result.home ? "STAREHE FC" : result.opponent}</span>
-                      <strong>{leftScore} - {rightScore}</strong>
+                      <strong>{showScore ? `${leftScore} - ${rightScore}` : "—"}</strong>
                       <span className="admin-team-inline">{result.home ? <ClubBadge src={result.opponentLogoUrl} name={result.opponent} size="small" /> : <ClubBadge name="Starehe FC" size="small" />}{result.home ? result.opponent : "STAREHE FC"}</span>
                     </div>
 

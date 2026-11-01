@@ -3658,6 +3658,11 @@ body {
   color: #991b1b;
 }
 
+.outcome-neutral {
+  background: #e2e8f0;
+  color: #334155;
+}
+
 .admin-result-scoreline {
   display: flex;
   align-items: center;

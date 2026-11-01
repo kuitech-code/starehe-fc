@@ -3,6 +3,8 @@ const pool = require("../db");
 
 const router = express.Router();
 const MAX_SCORE = 32767;
+const RESULT_STATUSES = ["Normal", "Cancelled", "Postponed", "Home walkover", "Away walkover", "Home win penalties", "Away win penalties", "Abandoned", "Void"];
+const SCORE_REQUIRED_STATUSES = ["Normal", "Home win penalties", "Away win penalties"];
 
 function validDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -21,8 +23,12 @@ function validateResult(body) {
     errors.push("match_date must be a valid date in YYYY-MM-DD format");
   }
 
+  const status = body.status ?? "Normal";
+  if (!RESULT_STATUSES.includes(status)) errors.push("status must be a supported match status");
+
   for (const field of ["starehe_score", "opponent_score"]) {
-    if (!Number.isInteger(body[field]) || body[field] < 0 || body[field] > MAX_SCORE) {
+    const score = body[field] ?? (SCORE_REQUIRED_STATUSES.includes(status) ? undefined : 0);
+    if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
       errors.push(field + " must be a whole number from 0 to " + MAX_SCORE);
     }
   }
@@ -47,9 +53,11 @@ function validateResult(body) {
 }
 
 function scoreColumns(body) {
+  const stareheScore = body.starehe_score ?? 0;
+  const opponentScore = body.opponent_score ?? 0;
   return body.is_home
-    ? [body.starehe_score, body.opponent_score]
-    : [body.opponent_score, body.starehe_score];
+    ? [stareheScore, opponentScore]
+    : [opponentScore, stareheScore];
 }
 
 function serializeResult(row) {
@@ -61,6 +69,7 @@ function serializeResult(row) {
     match_date: row.match_date,
     starehe_score: row.is_home ? row.home_score : row.away_score,
     opponent_score: row.is_home ? row.away_score : row.home_score,
+    status: row.status || "Normal",
     venue: row.venue,
     competition: row.competition,
     is_home: row.is_home,
@@ -133,8 +142,8 @@ router.post("/", async (req, res, next) => {
     if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
     const { rows } = await pool.query(
       "INSERT INTO results " +
-        "(opponent_team_id, opponent, match_date, home_score, away_score, venue, competition, is_home) " +
-        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+        "(opponent_team_id, opponent, match_date, home_score, away_score, venue, competition, is_home, status) " +
+        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
       [
         teamRows[0].id,
         teamRows[0].name,
@@ -144,6 +153,7 @@ router.post("/", async (req, res, next) => {
         req.body.venue?.trim() || null,
         req.body.competition?.trim() || null,
         req.body.is_home,
+        req.body.status || "Normal",
       ],
     );
     res.status(201).json(serializeResult({ ...rows[0], opponent_logo_url: teamRows[0].logo_url }));
@@ -174,8 +184,8 @@ router.put("/:id", async (req, res, next) => {
     if (!teamRows.length) return res.status(400).json({ error: "Choose a registered opponent team" });
     const { rows } = await pool.query(
       "UPDATE results SET opponent_team_id = $1, opponent = $2, match_date = $3, home_score = $4, " +
-        "away_score = $5, venue = $6, competition = $7, is_home = $8, " +
-        "updated_at = NOW() WHERE id = $9 RETURNING *",
+        "away_score = $5, venue = $6, competition = $7, is_home = $8, status = $9, " +
+        "updated_at = NOW() WHERE id = $10 RETURNING *",
       [
         teamRows[0].id,
         teamRows[0].name,
@@ -185,6 +195,7 @@ router.put("/:id", async (req, res, next) => {
         req.body.venue?.trim() || null,
         req.body.competition?.trim() || null,
         req.body.is_home,
+        req.body.status || "Normal",
         req.params.id,
       ],
     );
