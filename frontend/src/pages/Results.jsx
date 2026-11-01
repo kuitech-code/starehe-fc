@@ -2,10 +2,19 @@ import { useEffect, useState } from "react";
 import { fetchApiList, formatDate, resultLetter } from "../api";
 import ClubBadge from "../components/ClubBadge";
 
+const RESULTS_PER_PAGE = 10;
+
 function Results() {
   const [results, setResults] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const totalPages = Math.max(1, Math.ceil(results.length / RESULTS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedResults = results.slice(
+    (safePage - 1) * RESULTS_PER_PAGE,
+    safePage * RESULTS_PER_PAGE,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +60,7 @@ function Results() {
             <p>No results have been added yet.</p>
           ) : (
             <div className="results-page-list">
-              {results.map((match) => {
+              {paginatedResults.map((match) => {
                 const result = resultLetter(match);
 
                 return (
@@ -95,6 +104,27 @@ function Results() {
                 );
               })}
             </div>
+          )}
+          {!loading && !error && results.length > RESULTS_PER_PAGE && (
+            <nav className="results-pagination" aria-label="Results pages">
+              <button
+                type="button"
+                className="admin-secondary-button"
+                onClick={() => setCurrentPage(safePage - 1)}
+                disabled={safePage === 1}
+              >
+                Previous
+              </button>
+              <span>Page {safePage} of {totalPages}</span>
+              <button
+                type="button"
+                className="admin-secondary-button"
+                onClick={() => setCurrentPage(safePage + 1)}
+                disabled={safePage === totalPages}
+              >
+                Next
+              </button>
+            </nav>
           )}
         </div>
       </section>

@@ -7,6 +7,7 @@ const API_URL = `${API_ORIGIN}/api/results`;
 const TEAMS_API_URL = `${API_ORIGIN}/api/table/teams`;
 const RESULT_STATUSES = ["Normal", "Cancelled", "Postponed", "Home walkover", "Away walkover", "Home win penalties", "Away win penalties", "Abandoned", "Void"];
 const SCORE_REQUIRED_STATUSES = ["Normal", "Home win penalties", "Away win penalties"];
+const RESULTS_PER_PAGE = 10;
 
 const emptyForm = {
   date: "",
@@ -80,6 +81,7 @@ function fromApi(result) {
 
 function AdminResults() {
   const [results, setResults] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +91,12 @@ function AdminResults() {
   const [error, setError] = useState("");
   const [pageError, setPageError] = useState("");
   const requiresScore = SCORE_REQUIRED_STATUSES.includes(formData.status);
+  const totalPages = Math.max(1, Math.ceil(results.length / RESULTS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedResults = results.slice(
+    (safePage - 1) * RESULTS_PER_PAGE,
+    safePage * RESULTS_PER_PAGE,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -453,7 +461,7 @@ function AdminResults() {
           </div>
         ) : (
           <div className="admin-fixture-list">
-            {results.map((result) => {
+            {paginatedResults.map((result) => {
               const outcome = getOutcome(result);
               const showScore = SCORE_REQUIRED_STATUSES.includes(result.status);
               const leftScore = result.home ? result.homeScore : result.awayScore;
@@ -501,6 +509,27 @@ function AdminResults() {
               );
             })}
           </div>
+        )}
+        {!loading && results.length > RESULTS_PER_PAGE && (
+          <nav className="results-pagination" aria-label="Results pages">
+            <button
+              type="button"
+              className="admin-secondary-button"
+              onClick={() => setCurrentPage(safePage - 1)}
+              disabled={safePage === 1}
+            >
+              Previous
+            </button>
+            <span>Page {safePage} of {totalPages}</span>
+            <button
+              type="button"
+              className="admin-secondary-button"
+              onClick={() => setCurrentPage(safePage + 1)}
+              disabled={safePage === totalPages}
+            >
+              Next
+            </button>
+          </nav>
         )}
       </section>
     </div>
