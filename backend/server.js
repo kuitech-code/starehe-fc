@@ -73,7 +73,14 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("API request failed:", err.message);
+  const cause = err.cause;
+  console.error("API request failed:", {
+    method: req.method,
+    path: req.path,
+    message: err.message,
+    causeCode: cause?.code,
+    causeMessage: cause?.message,
+  });
 
   if (res.headersSent) return next(err);
 

@@ -320,18 +320,17 @@ function AdminFixtures() {
               </div>
 
               <div className="admin-form-group">
-                <label htmlFor="fixture-competition">Competition</label>
-                <select
+                <label htmlFor="fixture-competition">Tournament / Competition Name</label>
+                <input
                   id="fixture-competition"
                   name="competition"
+                  type="text"
                   value={formData.competition}
                   onChange={handleChange}
-                >
-                  <option>League Match</option>
-                  <option>Cup Match</option>
-                  <option>Friendly</option>
-                  <option>Tournament</option>
-                </select>
+                  placeholder="e.g. Starehe Invitational Cup"
+                  maxLength={120}
+                  required
+                />
               </div>
 
               <div className="admin-form-group admin-checkbox-group">
