@@ -81,7 +81,7 @@ function Contact() {
 
                 <div className="contact-detail">
                   <span>LOCATION</span>
-                  <strong>Starehe, Kenya</strong>
+                  <strong>Starehe, Nyandarua Kenya</strong>
                 </div>
 
               </div>
