@@ -71,7 +71,7 @@ function Contact() {
 
                 <div className="contact-detail">
                   <span>PHONE</span>
-                  <strong>+254 700 000 000</strong>
+                  <strong>+254 705 824 547</strong>
                 </div>
 
                 <div className="contact-detail">
